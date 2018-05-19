@@ -13,8 +13,8 @@ public class Note {
 		this.index = indexOf(letter, accidental);
 	}
 	
-	public int halfStepsAbove(Note other) {
-		return (index - other.index + 12) % 12;
+	public int halfStepsTo(Note other) {
+		return (other.index - index + 12) % 12;
 	}
 	
 	private int indexOf(Letter letter, Accidental accidental) {

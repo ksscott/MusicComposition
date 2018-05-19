@@ -8,6 +8,10 @@ public class ScaleImpl implements Scale {
 		this.intervals = intervals;
 	}
 	
+	public ScaleImpl(Scale other) {
+		this.intervals = other.intervals();
+	}
+	
 	@Override
 	public int[] intervals() {
 		int[] retval = new int[intervals.length];

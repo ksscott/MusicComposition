@@ -18,6 +18,8 @@ public class IncompleteComposition extends Composition {
 		super(other);
 		if (other instanceof IncompleteComposition)
 			this.future = ((IncompleteComposition) other).future;
+		else
+			this.future = new LinkedList<>();
 	}
 	
 	/**

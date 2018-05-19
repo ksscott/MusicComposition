@@ -11,9 +11,9 @@ public class ComposerThread extends Thread {
 	private boolean paused;
 	private boolean stopped;
 	
-	public ComposerThread(ComposingStrategy strategy) {
+	public ComposerThread(Composition composition, ComposingStrategy strategy) {
 		this.strategy = strategy;
-		this.composition = new IncompleteComposition();
+		this.composition = new IncompleteComposition(composition);
 	}
 	
 	@Override

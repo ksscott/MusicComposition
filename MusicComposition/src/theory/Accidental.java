@@ -13,5 +13,9 @@ public enum Accidental {
 	public int pitchAdjustment() {
 		return ordinal() - 1;
 	}
+	
+	public String getSymbol() {
+		return new String(symbol);
+	}
 
 }

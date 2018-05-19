@@ -32,15 +32,25 @@ public class Measure {
 	
 	public Measure addNote(MidiNote note, double offset) {
 		List<MidiNote> list = notes.get(new Double(offset));
-		if (list == null)
+		if (list == null) {
 			list = new ArrayList<>();
+			notes.put(new Double(offset), list);
+		}
 		list.add(note);
 		return this;
 	}
 	
 	public List<MidiNote> getNotes(double time) {
 		List<MidiNote> list = notes.get(new Double(time));
-		return new ArrayList<>(list);
+		return list == null ? new ArrayList<>() : new ArrayList<>(list);
+	}
+
+	public int beats() {
+		return beats;
+	}
+	
+	public double beatValue() {
+		return beatValue;
 	}
 
 }

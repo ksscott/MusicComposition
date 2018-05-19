@@ -24,7 +24,7 @@ public class Chord {
 	}
 	
 	public List<MidiPitch> get() {
-		return new ArrayList(pitches);
+		return new ArrayList<>(pitches);
 	}
 
 }

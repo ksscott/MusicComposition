@@ -9,9 +9,11 @@ public interface Scale {
 		int length = intervals.length;
 		int[] retval = new int[length];
 		for (int i=0; i<length; i++) {
+			int sum = 0;
 			for (int j=0; j<=i; j++) {
-				
+				sum += intervals[j];
 			}
+			retval[i] = sum;
 		}
 		return retval;
 	}
@@ -43,7 +45,7 @@ public interface Scale {
 		if (firstHalfStep == -1 || secondHalfStep == -1)
 			return false; // found fewer than two half steps
 		
-		return true; // FIXME
+		return true;
 	}
 	
 }

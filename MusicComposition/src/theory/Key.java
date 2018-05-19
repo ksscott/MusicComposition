@@ -19,6 +19,14 @@ public class Key {
 		this.scale = scale;
 	}
 	
+	public Note getTonic() {
+		return tonic;
+	}
+	
+	public Scale getScale() {
+		return new ScaleImpl(scale); // TODO return original?
+	}
+	
 	public boolean contains(Note note) {
 		return false; // FIXME
 	}

@@ -1,23 +1,27 @@
 package composing;
 
 import composing.strategy.ComposingStrategy;
-import composing.strategy.TwelveBarBluesStrategy;
+import composing.strategy.TwelveBarImprovStrategy;
+import theory.Accidental;
+import theory.Letter;
 import theory.Measure;
+import theory.Note;
 
 public class Composer {
 	
 	private ComposerThread thread;
 	
-	public Composer() {
-		this(new TwelveBarBluesStrategy());
+	public Measure beginComposing() {
+		return beginComposing(new TwelveBarImprovStrategy(new Note(Letter.C, Accidental.NONE)));
 	}
 	
-	public Composer(ComposingStrategy strategy) {
-		this.thread = new ComposerThread(strategy);
-	}
-	
-	public void compose() {
+	public Measure beginComposing(ComposingStrategy strategy) {
+		Composition composition = new Composition();
+		Measure measure = strategy.generateFirstMeasure();
+		composition.addMeasure(measure);
+		thread = new ComposerThread(composition, strategy);
 		thread.start();
+		return measure;
 	}
 	
 	public Measure writeNextMeasure() {
