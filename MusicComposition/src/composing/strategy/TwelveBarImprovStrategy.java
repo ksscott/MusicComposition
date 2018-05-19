@@ -47,12 +47,12 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 		double beatValue = measure.beatValue();
 		
 		// change character every measure
-		int downBeatChance = (int) (50 + Math.random()*40); // 50 - 80
-		int offBeatChance = (int) (30 + Math.random()*40); // 30 - 60
+		int downBeatChance = (int) (40 + Math.random()*50); // 50 - 80
+		int offBeatChance = (int) (20 + Math.random()*55); // 30 - 60
 		
 		// prepare the downbeat and offbeat of each beat of the measure randomly
 		for (int i=0; i<measure.beats(); i++) {
-			if (roll(10)) // skip around once in a while
+			if (roll(7)) // skip around once in a while
 				noteIndex = ((int) Math.random()*pitches.length);
 			
 			if (roll(downBeatChance)) {
