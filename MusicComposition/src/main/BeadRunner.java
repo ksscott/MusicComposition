@@ -65,12 +65,16 @@ public class BeadRunner {
 //						int beats = measure.beats();
 						double beatValue = measure.beatValue();
 						double time = (double) countThisMeasure*beatValue/((double) c.getTicksPerBeat());
+						double lastTime = (double) (countThisMeasure-1)*beatValue/((double) c.getTicksPerBeat());
 						
 						// play notes
-						List<MidiNote> notes = measure.getNotes(time);
+//						List<MidiNote> notes = measure.getNotes(time); // misses times in between beats
+						List<MidiNote> notes = measure.getNotes(lastTime, time);
+						if (!notes.isEmpty())
+							System.out.print(String.format("Notes at time %.2f: ", time));
 						for (MidiNote note : notes) {
 							pitch = note.getPitch();
-							System.out.println("Pitch: " + pitch);
+							System.out.print(pitch + " ");
 							float freq = Pitch.mtof(pitch);
 							WavePlayer wp = new WavePlayer(ac, freq, Buffer.SINE);
 							Gain g = new Gain(ac, 1, new Envelope(ac, 0));
@@ -81,6 +85,8 @@ public class BeadRunner {
 							((Envelope)g.getGainUGen()).addSegment(0.1f, note.getPeakMillis());
 							((Envelope)g.getGainUGen()).addSegment(0, duration, new KillTrigger(g));
 						}
+						if (!notes.isEmpty())
+							System.out.println();
 						
 						
 //						// tutorial

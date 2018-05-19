@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Measure {
 	
@@ -11,7 +12,7 @@ public class Measure {
 	private int beats;
 	private double beatValue;
 	
-	private Map<Double, List<MidiNote>> notes;
+	private Map<Double,List<MidiNote>> notes;
 	
 	public Measure(int beats, double beatValue) {
 		this.beats = beats;
@@ -19,6 +20,14 @@ public class Measure {
 		this.notes = new HashMap<>();
 	}
 	
+	public int beats() {
+		return beats;
+	}
+
+	public double beatValue() {
+		return beatValue;
+	}
+
 	/**
 	 * Intended to add a note at the latest silence in this measure
 	 * 
@@ -26,8 +35,7 @@ public class Measure {
 	 * @return this measure
 	 */
 	public Measure addNote(MidiNote note) {
-		double offset = 0; // FIXME
-		return addNote(note, offset);
+		return addNote(note, latestNoteEnd());
 	}
 	
 	public Measure addNote(MidiNote note, double offset) {
@@ -44,13 +52,38 @@ public class Measure {
 		List<MidiNote> list = notes.get(new Double(time));
 		return list == null ? new ArrayList<>() : new ArrayList<>(list);
 	}
-
-	public int beats() {
-		return beats;
+	
+	/**
+	 * @param time start, exclusive
+	 * @param time end, inclusive
+	 * @return notes in a range
+	 */
+	public List<MidiNote> getNotes(double start, double end) {
+		List<MidiNote> allNotes = new ArrayList<>();
+		Set<Double> keySet = notes.keySet();
+		for (Double dub : keySet) {
+			if ((dub > start && dub <= end) || dub == end)
+				allNotes.addAll(notes.get(dub));
+		}
+		return allNotes;
 	}
 	
-	public double beatValue() {
-		return beatValue;
+	public Set<Double> getTimes() {
+		return notes.keySet();
+	}
+	
+	public boolean isEmpty() {
+		return notes.keySet().isEmpty();
+	}
+
+	private double latestNoteEnd() {
+		double latest = 0;
+		for (Double dub : notes.keySet()) {
+			for (MidiNote note : notes.get(dub)) {
+				latest = Math.max(latest, dub + note.getDuration());
+			}
+		}
+		return latest;
 	}
 
 }

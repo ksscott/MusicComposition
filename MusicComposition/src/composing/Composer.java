@@ -2,7 +2,6 @@ package composing;
 
 import composing.strategy.ComposingStrategy;
 import composing.strategy.TwelveBarImprovStrategy;
-import theory.Accidental;
 import theory.Letter;
 import theory.Measure;
 import theory.Note;
@@ -11,8 +10,12 @@ public class Composer {
 	
 	private ComposerThread thread;
 	
+	private ComposingStrategy[] oldTricks = new ComposingStrategy[] { 
+					new TwelveBarImprovStrategy(new Note(Letter.C)),
+			};
+	
 	public Measure beginComposing() {
-		return beginComposing(new TwelveBarImprovStrategy(new Note(Letter.C, Accidental.NONE)));
+		return beginComposing(randomRepertoire());
 	}
 	
 	public Measure beginComposing(ComposingStrategy strategy) {
@@ -32,4 +35,7 @@ public class Composer {
 		return thread.stopComposing();
 	}
 	
+	private ComposingStrategy randomRepertoire() {
+		return oldTricks[(int) Math.random() * oldTricks.length];
+	}
 }

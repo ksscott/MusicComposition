@@ -7,6 +7,10 @@ public class Note {
 	/** Half steps above A */
 	private int index;
 
+	public Note(Letter letter) {
+		this(letter, Accidental.NONE);
+	}
+	
 	public Note(Letter letter, Accidental accidental) {
 		this.letter = letter;
 		this.accidental = accidental;

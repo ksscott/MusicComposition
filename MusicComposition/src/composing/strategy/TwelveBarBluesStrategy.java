@@ -12,7 +12,7 @@ import theory.ScaleImpl;
 
 public class TwelveBarBluesStrategy implements ComposingStrategy {
 	
-	private int tonic;
+	protected int tonic;
 	private int[] chordsHalfSteps = new int[] { 0, 0, 0, 0, 5, 5, 0, 0, 7, 5, 0, 0 };
 	private Scale baseline = new ScaleImpl(new int[] { 0, 4, 7, 9, 10 });
 
@@ -70,7 +70,7 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 		double beatValue = 1/4.0;
 		Measure measure = new Measure(beats, beatValue);
 		for (int i=0; i<beats; i++)
-			measure.addNote(new MidiNote(baseline.intervals()[i] + root, beatValue), i*beatValue);
+			measure.addNote(new MidiNote(baseline.intervals()[i] + root, beatValue));
 		return measure;
 	}
 
@@ -79,7 +79,7 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 		double beatValue = 1/4.0;
 		Measure measure = new Measure(beats, beatValue);
 		for (int i=0; i<beats; i++)
-			measure.addNote(new MidiNote(baseline.intervals()[4-i] + root, beatValue), i*beatValue);
+			measure.addNote(new MidiNote(baseline.intervals()[4-i] + root, beatValue));
 		return measure;
 	}
 	

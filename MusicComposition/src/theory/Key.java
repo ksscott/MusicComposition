@@ -2,6 +2,8 @@ package theory;
 
 import static theory.Mode.*;
 
+import java.util.Arrays;
+
 public class Key {
 	
 	public static final Scale MAJOR = IONIAN;
@@ -28,7 +30,7 @@ public class Key {
 	}
 	
 	public boolean contains(Note note) {
-		return false; // FIXME
+		return Arrays.asList(scale.intervalsFromRoot()).contains(tonic.halfStepsTo(note));
 	}
 
 }
