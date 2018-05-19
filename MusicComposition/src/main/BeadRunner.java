@@ -39,7 +39,7 @@ public class BeadRunner {
 					Measure measure = composer.beginComposing();
 					int startOfMeasure = 0;
 					int measures = 0;
-					{ System.out.println("Measure: " + ++measures); }
+					{ System.out.println("Measure: " + ++measures + " " + measure.getMetaInfo()); }
 					
 					int pitch;
 					public void messageReceived(Bead message) {
@@ -52,7 +52,7 @@ public class BeadRunner {
 //							System.out.println("Count this measure: " + countThisMeasure);
 							if (beat >= startOfMeasure + measure.beats()) { // is new measure
 //								System.out.println("Beats this measure: " + measure.beats());
-								System.out.println("Measure: " + ++measures);
+								System.out.println("Measure: " + ++measures + " " + measure.getMetaInfo());
 								measure = composer.writeNextMeasure();
 								startOfMeasure = beat;
 							}

@@ -1,6 +1,8 @@
 package theory;
 
 public interface Scale {
+	
+	public default String name() { return ""; }
 
 	public int[] intervals();
 	

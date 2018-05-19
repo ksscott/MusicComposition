@@ -2,14 +2,26 @@ package theory;
 
 public class ScaleImpl implements Scale {
 
+	protected String name;
 	protected int[] intervals;
 	
 	public ScaleImpl(int[] intervals) {
+		this(intervals, "");
+	}
+	
+	public ScaleImpl(int[] intervals, String name) {
+		this.name = name;
 		this.intervals = intervals;
 	}
 	
 	public ScaleImpl(Scale other) {
+		this.name = other.name();
 		this.intervals = other.intervals();
+	}
+	
+	@Override
+	public String name() {
+		return new String(name);
 	}
 	
 	@Override

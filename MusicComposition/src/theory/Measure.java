@@ -12,6 +12,8 @@ public class Measure {
 	private int beats;
 	private double beatValue;
 	
+	private String metaInfo = "";
+	
 	private Map<Double,List<MidiNote>> notes;
 	
 	public Measure(int beats, double beatValue) {
@@ -74,6 +76,14 @@ public class Measure {
 	
 	public boolean isEmpty() {
 		return notes.keySet().isEmpty();
+	}
+	
+	public String getMetaInfo() {
+		return new String(metaInfo);
+	}
+	
+	public void setMetaInfo(String info) {
+		this.metaInfo = info;
 	}
 
 	private double latestNoteEnd() {
