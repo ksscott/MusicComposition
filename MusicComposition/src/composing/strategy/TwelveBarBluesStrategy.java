@@ -27,7 +27,7 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 
 	@Override
 	public boolean iterate(IncompleteComposition composition) {
-		final Queue<Measure> future = composition.getFuture();
+		Queue<Measure> future = composition.getFuture();
 		future.add(composeBar(composition));
 		return future.size() >= 12;
 	}

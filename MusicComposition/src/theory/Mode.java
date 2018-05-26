@@ -11,7 +11,7 @@ public enum Mode implements Scale {
 	LOCRIAN,
 	;
 	
-	public static final int[] DIATONIC_INTERVALS = new int[] { 2, 2, 1, 2, 2, 2, 1};
+	public static final int[] DIATONIC_INTERVALS = new int[] { 2, 2, 1, 2, 2, 2, 1 };
 	
 	@Override
 	public int[] intervals() {

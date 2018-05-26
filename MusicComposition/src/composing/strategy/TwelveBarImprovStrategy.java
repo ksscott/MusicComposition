@@ -2,6 +2,7 @@ package composing.strategy;
 
 import composing.IncompleteComposition;
 import theory.Accidental;
+import theory.Dynamic;
 import theory.Key;
 import theory.Measure;
 import theory.MidiNote;
@@ -31,9 +32,10 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 	
 	@Override
 	public Measure generateFirstMeasure() {
-		final String scaleName = setScale(Key.BLUES_SCALE).name();
+		Scale scale = Key.BLUES_SCALE;
+		setScale(scale);
 		Measure measure = super.generateFirstMeasure();
-		measure.setMetaInfo(scaleName);
+		measure.setMetaInfo(scale.name());
 		return measure;
 	}
 
@@ -67,7 +69,8 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 		
 		// change scale
 		if (roll(scaleChangeChance)) {
-			Scale scale = setScale(knownScales[random(knownScales.length)]);
+			Scale scale = knownScales[random(knownScales.length)];
+			setScale(scale);
 			measure.setMetaInfo(scale.name());
 		}
 		
@@ -78,7 +81,9 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 			
 			if (roll(downBeatChance)) {
 				// play on downbeat
-				measure.addNote(new MidiNote(pitches[noteIndex], 2/3.0*beatValue), i*beatValue);
+				final MidiNote note = new MidiNote(pitches[noteIndex], 2/3.0*beatValue);
+				note.setDynamic(Dynamic.MEZZO_PIANO);
+				measure.addNote(note, i*beatValue);
 				noteIndex += step();
 				noteIndex = (noteIndex + pitches.length) % pitches.length;
 			}
@@ -108,20 +113,18 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 		return measure;
 	}
 	
-	private Scale setScale(Scale scale) {
+	private void setScale(Scale scale) {
 		int[] intervals = scale.intervalsFromRoot();
-		pitches = new int[intervals.length+2]; // one to include root, one for an extra note on top
+		pitches = new int[intervals.length+1]; // include root and also octave up
 		pitches[0] = this.tonic + 12*octavesUp;
-		for (int i=1; i<=intervals.length; i++) {
-			pitches[i] = this.tonic + intervals[i-1] + 12*octavesUp;
+		for (int i=0; i<intervals.length; i++) {
+			pitches[i+1] = this.tonic + intervals[i] + 12*octavesUp;
 		}
-		pitches[intervals.length+1] = this.tonic + 12*(octavesUp+1); // the octave on top
+		pitches[intervals.length] = this.tonic + 12*(octavesUp+1); // the octave on top
 		
 		// make sure noteIndex is in bounds
 		if (noteIndex >= pitches.length)
 			noteIndex = random(pitches.length); // hack
-		
-		return scale;
 	}
 	
 	/**

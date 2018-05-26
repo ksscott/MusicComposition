@@ -1,27 +1,38 @@
 package theory;
 
-public class Note {
+public class Note implements Cloneable {
 	
-	public Letter letter;
-	public Accidental accidental;
 	/** Half steps above A */
 	private int index;
 
+	private Note(int index) {
+		if (index < 0 || index > 11)
+			throw new IllegalArgumentException("Let me teach you a little something about notes, friend!");
+		this.index = index;
+	}
+	
 	public Note(Letter letter) {
 		this(letter, Accidental.NONE);
 	}
 	
 	public Note(Letter letter, Accidental accidental) {
-		this.letter = letter;
-		this.accidental = accidental;
-		this.index = indexOf(letter, accidental);
+		this(indexOf(letter, accidental));
 	}
 	
 	public int halfStepsTo(Note other) {
 		return (other.index - index + 12) % 12;
 	}
 	
-	private int indexOf(Letter letter, Accidental accidental) {
+	public Note halfStepsAbove(int steps) {
+		return new Note((index + steps) % 12);
+	}
+	
+	@Override
+	public Note clone() {
+		return new Note(index);
+	}
+	
+	private static int indexOf(Letter letter, Accidental accidental) {
 		int halfSteps = 0;
 		switch(letter) {
 			default:

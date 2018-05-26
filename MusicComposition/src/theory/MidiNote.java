@@ -4,11 +4,13 @@ public class MidiNote {
 	
 	private int pitch;
 	private double duration;
-	int peakMillis = 100;
+	private int peakMillis = 150;
+	private Dynamic dynamic;
 	
 	public MidiNote(int midiPitch, double duration) {
 		this.pitch = midiPitch;
 		this.duration = duration;
+		this.dynamic = Dynamic.MEZZO_FORTE;
 	}
 	
 	public MidiNote(MidiPitch pitch, double length) {
@@ -25,6 +27,14 @@ public class MidiNote {
 	
 	public int getPeakMillis() {
 		return peakMillis;
+	}
+	
+	public Dynamic getDynamic() {
+		return Dynamic.of(dynamic);
+	}
+	
+	public void setDynamic(Dynamic dynamic) {
+		this.dynamic = dynamic;
 	}
 
 }

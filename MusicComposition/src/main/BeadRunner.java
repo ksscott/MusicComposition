@@ -12,6 +12,7 @@ import net.beadsproject.beads.ugens.Clock;
 import net.beadsproject.beads.ugens.Envelope;
 import net.beadsproject.beads.ugens.Gain;
 import net.beadsproject.beads.ugens.WavePlayer;
+import theory.Dynamic;
 import theory.Measure;
 import theory.MidiNote;
 
@@ -39,6 +40,7 @@ public class BeadRunner {
 					Measure measure = composer.beginComposing();
 					int startOfMeasure = 0;
 					int measures = 0;
+					float maxVolume = 0.15f;
 					{ System.out.println("Measure: " + ++measures + " " + measure.getMetaInfo()); }
 					
 					int pitch;
@@ -52,8 +54,8 @@ public class BeadRunner {
 //							System.out.println("Count this measure: " + countThisMeasure);
 							if (beat >= startOfMeasure + measure.beats()) { // is new measure
 //								System.out.println("Beats this measure: " + measure.beats());
-								System.out.println("Measure: " + ++measures + " " + measure.getMetaInfo());
 								measure = composer.writeNextMeasure();
+								System.out.println("Measure: " + ++measures + " " + measure.getMetaInfo());
 								startOfMeasure = beat;
 							}
 //							System.out.println("Time: " + time);
@@ -82,7 +84,8 @@ public class BeadRunner {
 							ac.out.addInput(g);
 							float millisPerBeat = c.getIntervalUGen().getValue();
 							int duration = (int) (millisPerBeat * note.getDuration() / beatValue);
-							((Envelope)g.getGainUGen()).addSegment(0.1f, note.getPeakMillis());
+							float volume = (float) volume(note.getDynamic());
+							((Envelope)g.getGainUGen()).addSegment(maxVolume*volume, note.getPeakMillis());
 							((Envelope)g.getGainUGen()).addSegment(0, duration, new KillTrigger(g));
 						}
 						if (!notes.isEmpty())
@@ -136,6 +139,14 @@ public class BeadRunner {
 
 	public static float random(double x) {
 		return (float)(Math.random() * x);
+	}
+	
+	/**
+	 * @param dynamic the volume to be represented
+	 * @return value between 0 (silent) and 1 (maximum)
+	 */
+	public static double volume(Dynamic dynamic) {
+		return (Math.atan(dynamic.getValue()) / Math.PI) + 0.5;
 	}
 
 }

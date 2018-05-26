@@ -85,6 +85,13 @@ public class Measure {
 	public void setMetaInfo(String info) {
 		this.metaInfo = info;
 	}
+	
+	public void absorb(Measure other) {
+		if (other.beats() != beats() || other.beatValue() != beatValue())
+			throw new IllegalArgumentException("Cannot absorb a measure with a different key signature.");
+		notes.putAll(other.notes);
+		setMetaInfo(metaInfo + "\n" + other.getMetaInfo());
+	}
 
 	private double latestNoteEnd() {
 		double latest = 0;
