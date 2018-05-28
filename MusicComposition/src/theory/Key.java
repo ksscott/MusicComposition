@@ -85,4 +85,10 @@ public class Key {
 		throw new UnsupportedOperationException("Getting the parallel key is only supported for the MAJOR and MINOR modes.");
 	}
 	
+	public Key tonicize(int scaleDegree) {
+		if (!scale.isDiatonic())
+			throw new UnsupportedOperationException("Operation currently only supported for diatonic scales");
+		return new Key(note(scaleDegree), Mode.equivalent(scale).revolve(scaleDegree));
+	}
+	
 }

@@ -83,7 +83,7 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		Measure measure = backgroundChord(currentChord);
 		measure.setMetaInfo("(" + currentChord + ")");
 		
-		currentChord = progressions.getNext(currentChord);
+		currentChord = progressions.getNext(currentChord); // hack
 		
 		return measure;
 	}

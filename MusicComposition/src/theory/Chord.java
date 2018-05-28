@@ -19,12 +19,21 @@ public class Chord {
 			this.pitches.add(p);
 	}
 	
-	public void add(MidiPitch pitch) {
-		pitches.add(pitch);
+	public Chord(Chord other) {
+		this();
+		this.pitches.addAll(other.get());
 	}
 	
 	public List<MidiPitch> get() {
 		return new ArrayList<>(pitches);
+	}
+	
+	public void add(MidiPitch pitch) {
+		pitches.add(pitch);
+	}
+	
+	public void remove(MidiPitch pitch) {
+		pitches.remove(pitch);
 	}
 	
 }

@@ -32,7 +32,7 @@ public class BeadRunner {
 		 * This example is more sophisticated than the previous ones. It uses
 		 * nested code.
 		 */
-		Clock clock = new Clock(ac, 500);
+		Clock clock = new Clock(ac, 700);
 		clock.addMessageListener(
 				//this is the on-the-fly bead
 				new Bead() {
