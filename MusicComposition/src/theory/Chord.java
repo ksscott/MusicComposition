@@ -29,7 +29,7 @@ public class Chord {
 	}
 	
 	public void add(MidiPitch pitch) {
-		pitches.add(pitch);
+		pitches.add(pitch); // set add prohibits duplicates
 	}
 	
 	public void remove(MidiPitch pitch) {
