@@ -4,14 +4,17 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import theory.Measure;
+import theory.analysis.Analysis;
 
 public class IncompleteComposition extends Composition {
 
 	private Queue<Measure> future;
+	private Analysis analysis;
 	
 	public IncompleteComposition() {
 		super();
 		this.future = new LinkedList<>();
+		this.analysis = new Analysis();
 	}
 	
 	public IncompleteComposition(Composition other) {
@@ -40,6 +43,10 @@ public class IncompleteComposition extends Composition {
 	public Composition finishComposition() {
 		// TODO do other work here?
 		return new Composition(this);
+	}
+	
+	public Analysis getAnalysis() {
+		return analysis;
 	}
 	
 }

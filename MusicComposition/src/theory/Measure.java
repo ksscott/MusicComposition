@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import theory.analysis.Phrase;
+
 public class Measure {
 	
 	// key signature:
@@ -41,12 +43,35 @@ public class Measure {
 	}
 	
 	public Measure addNote(MidiNote note, double offset) {
+		if (offset < 0)
+			throw new IllegalArgumentException("Cannot add notes before start of measure.");
+		if (offset + note.getDuration() > beats * beatValue)
+			throw new IllegalArgumentException("Note would end after end of measure.");
+		
 		List<MidiNote> list = notes.get(new Double(offset));
 		if (list == null) {
 			list = new ArrayList<>();
 			notes.put(new Double(offset), list);
 		}
 		list.add(note);
+		return this;
+	}
+	
+	public Measure addPhrase(Phrase phrase) {
+		return addPhrase(phrase, latestNoteEnd());
+	}
+	
+	public Measure addPhrase(Phrase phrase, double offset) {
+		if (phrase.getStart() < 0)
+			throw new IllegalArgumentException("No part of the phrase can start before the start of the measure.");
+		if (offset + phrase.getEnd() > beats * beatValue)
+			throw new IllegalArgumentException("Phrase would end after end of measure.");
+		
+		Map<Double, List<MidiNote>> phraseNotes = phrase.getNotes();
+		for (Double time : phraseNotes.keySet())
+			for (MidiNote note : phraseNotes.get(time))
+				addNote(note, offset + time);
+		
 		return this;
 	}
 	
