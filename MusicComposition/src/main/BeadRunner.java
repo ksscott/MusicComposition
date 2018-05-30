@@ -53,7 +53,7 @@ public class BeadRunner {
 					Composer composer = new Composer();
 					{ measures.add(composer.beginComposing()); }
 					int startOfMeasure = 0;
-					float maxVolume = 0.15f;
+					float maxVolume = 0.25f;
 					
 					int pitch;
 					public void messageReceived(Bead message) {
