@@ -1,6 +1,5 @@
 package main;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,14 +48,12 @@ public class BeadRunner {
 		clock.addMessageListener(
 				//this is the on-the-fly bead
 				new Bead() {
-					Queue<Measure> measures = new ArrayDeque<>();
+					Queue<Measure> measures = new PriorityQueue<>();
+					Measure measure;
 					Composer composer = new Composer();
 					{ measures.add(composer.beginComposing()); }
-					Measure measure = measures.poll();
 					int startOfMeasure = 0;
-					int measuresBegun = 0;
 					float maxVolume = 0.15f;
-					{ System.out.println("Measure: " + ++measuresBegun + " " + measure.getMetaInfo()); }
 					
 					int pitch;
 					public void messageReceived(Bead message) {
@@ -80,9 +77,9 @@ public class BeadRunner {
 						if (c.isBeat()) {
 //							System.out.println("Beat: " + beat);
 //							System.out.println("Count this measure: " + countThisMeasure);
-							if (beat >= startOfMeasure + measure.beats() || beat == 0) { // is new measure
+							if (beat == 0 || beat >= startOfMeasure + measure.beats()) { // is new measure
 //								System.out.println("Beats this measure: " + measure.beats());
-								if (measures.size() < 2) {
+								if (measures.size() < 1) {
 									final Measure nextMeasure = composer.writeNextMeasure();
 									if (nextMeasure != null)
 										measures.add(nextMeasure);
@@ -90,7 +87,7 @@ public class BeadRunner {
 								measure = measures.poll(); // TODO maybe use multiple threads to make this smoother
 								int millisPerSec = (int) (60000 / measure.getBpm());
 								c.getIntervalUGen().setValue(millisPerSec);
-								System.out.println("Measure: " + ++measuresBegun + " " + measure.getMetaInfo());
+								System.out.println("Measure: " + measure.getMeasureNumber() + " " + measure.getMetaInfo());
 								startOfMeasure = beat;
 							}
 //							System.out.println("Time: " + time);

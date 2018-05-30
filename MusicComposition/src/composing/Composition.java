@@ -23,6 +23,7 @@ public class Composition {
 	
 	public void addMeasure(Measure measure) {
 		measures.add(measure);
+		measure.setMeasureNumber(measures.size());
 	}
 
 }

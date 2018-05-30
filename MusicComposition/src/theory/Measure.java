@@ -13,6 +13,8 @@ public class Measure {
 	// time signature:
 	private int beats;
 	private double beatValue;
+	
+	int measureNumber;
 	private double bpm = 60;
 	
 	private String metaInfo = "";
@@ -25,13 +27,17 @@ public class Measure {
 		this.notes = new HashMap<>();
 	}
 	
-	public int beats() {
-		return beats;
-	}
+	public int beats() { return beats; }
+	public double beatValue() { return beatValue; }
 
-	public double beatValue() {
-		return beatValue;
-	}
+	public int getMeasureNumber() { return measureNumber; }
+	public void setMeasureNumber(int number) { this.measureNumber = number; }
+
+	public double getBpm() { return bpm; }
+	public void setBpm(double beatsPerMinute) { this.bpm = beatsPerMinute; }
+
+	public String getMetaInfo() { return new String(metaInfo); }
+	public void setMetaInfo(String info) { this.metaInfo = info; }
 
 	/**
 	 * Intended to add a note at the latest silence in this measure
@@ -102,22 +108,6 @@ public class Measure {
 	
 	public boolean isEmpty() {
 		return notes.keySet().isEmpty();
-	}
-	
-	public double getBpm() {
-		return bpm;
-	}
-	
-	public void setBpm(double beatsPerMinute) {
-		this.bpm = beatsPerMinute;
-	}
-	
-	public String getMetaInfo() {
-		return new String(metaInfo);
-	}
-	
-	public void setMetaInfo(String info) {
-		this.metaInfo = info;
 	}
 	
 	public void absorb(Measure other) {

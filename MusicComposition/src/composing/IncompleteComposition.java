@@ -36,7 +36,7 @@ public class IncompleteComposition extends Composition {
 
 	public Measure writeNextMeasure() {
 		final Measure measure = future.poll();
-		this.measures.add(measure);
+		addMeasure(measure);
 		return measure;
 	}
 	
