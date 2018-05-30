@@ -29,10 +29,10 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		this.tonic = MidiPitch.inOctave(key.getTonic(), octave);
 		
 		this.progressions = new ChordProgressions(key);
-		progressions.put(1,4);
+		progressions.put(1,4,2);
 		progressions.put(1,6);
 		progressions.put(1,3);
-		progressions.put(4,5,2);
+		progressions.put(4,5,4);
 		progressions.put(4,6);
 		progressions.put(4,3);
 		progressions.put(4,2);

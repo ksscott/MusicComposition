@@ -62,8 +62,8 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 		double beatValue = measure.beatValue();
 		
 		// change character every measure
-		int downBeatChance = random(45, 90); // 50 - 80
-		int offBeatChance = random(25, 80); // 30 - 60
+		int downBeatChance = random(45, 90);
+		int offBeatChance = random(20, 75);
 		int noteSkipChance = 7;
 		int scaleChangeChance = 15;
 		
