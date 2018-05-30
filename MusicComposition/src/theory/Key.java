@@ -34,17 +34,19 @@ public class Key {
 	}
 	
 	public Note note(int scaleDegree) {
-		if (scaleDegree < 1)
-			throw new IllegalArgumentException("Scale degrees less than 1 are not currently supported.");
+//		if (scaleDegree < 1)
+//			throw new IllegalArgumentException("Scale degrees less than 1 are not currently supported.");
 		int[] intervals = scale.intervalsFromRoot();
 		int notes = intervals.length;
-		int degree = scaleDegree % notes;
-		int steps = intervals[degree];
+		int degree = ((scaleDegree - 1) % notes) + 1;
+		int steps = intervals[degree - 1];
 		return tonic.halfStepsAbove(steps);
 	}
 
 	// unsure if this is the best method signature
 	public Chord chord(int scaleDegree, int octave) {
+		if (scaleDegree == 7)
+			System.out.println("SEVEN");; // debugging break point
 		Chord chord = new Chord();
 		
 		int[] intervals = scale.intervals();
