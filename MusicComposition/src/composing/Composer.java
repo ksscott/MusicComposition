@@ -1,8 +1,12 @@
 package composing;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Queue;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import composing.strategy.ComposingStrategy;
@@ -17,17 +21,26 @@ public class Composer {
 	
 	private ComposerThread thread;
 	private List<Composition> works = new ArrayList<>();
+	private Queue<ComposingStrategy> requests = new ArrayDeque<>();
 	
-	private ComposingStrategy[] oldTricks = new ComposingStrategy[] { 
+	private List<ComposingStrategy> oldTricks = Arrays.asList(new ComposingStrategy[] { 
 					new TwelveBarImprovStrategy(new Note(Letter.C)),
 					new PrettyProgressionStrategy(new Key(new Note(Letter.C), Key.MAJOR)),
-			};
+			});
 	
+	/**
+	 * @param strategy
+	 * @return the first measure of the composition
+	 */
 	public Measure beginComposing() {
 //		return beginComposing(randomRepertoire());
-		return beginComposing(oldTricks[1]);
+		return beginComposing(oldTricks.get(1));
 	}
 	
+	/**
+	 * @param strategy
+	 * @return the first measure of the composition
+	 */
 	public Measure beginComposing(ComposingStrategy strategy) {
 		Composition composition = new Composition();
 		Measure measure = strategy.generateFirstMeasure();
@@ -51,17 +64,31 @@ public class Composer {
 				strategy = thread.getStrategy();
 				finishComposing();
 				return beginComposing(strategy);
+			case REQUEST:
+				for (ComposingStrategy trick : oldTricks)
+					if (trick.toString().toLowerCase().contains(
+							UserInput.REQUEST.getParams(inputString).get(0).toLowerCase())) {
+						requests.add(trick);
+						System.out.println("Requested " + trick);
+					}
+				break;
 			case SWITCH:
 				strategy = thread.getStrategy();
-				ComposingStrategy newStrategy;
-				do {
-					newStrategy = randomRepertoire();
-				} while (newStrategy.equals(strategy));
+				ComposingStrategy nextStrategy;
 				finishComposing();
-				return beginComposing(newStrategy);
+				// requests queued?
+				if (!requests.isEmpty()) {
+					nextStrategy = requests.poll();
+				} else { // else, pick anything that's not the current piece
+					do {
+						nextStrategy = randomRepertoire();
+					} while (nextStrategy.equals(strategy));
+				}
+				return beginComposing(nextStrategy);
 			default:
-				return null;
+				break;
 		}
+		return null;
 	}
 
 	public Composition finishComposing() {
@@ -70,25 +97,35 @@ public class Composer {
 		return work;
 	}
 	
-	@SuppressWarnings("unused")
 	private ComposingStrategy randomRepertoire() {
-		return oldTricks[(int) (Math.random() * oldTricks.length)];
+		return oldTricks.get((int) (Math.random() * oldTricks.size()));
 	}
 	
 	private enum UserInput {
-		RESTART("restart"),
-		SWITCH("switch"),
+		RESTART(startsWithAny("restart", "reset")),
+		REQUEST(startsWithAny("request"), 
+				string -> Arrays.asList(string.substring("request".length()).trim())),
+		SWITCH(startsWithAny("switch")),
 		;
 		
 		private Predicate<String> test;
+		private Function<String,List<String>> paramParser;
 		
-		private UserInput(String... commands) {
-			final List<String> commandList = Arrays.asList(commands);
-			this.test = string -> string == null ? false : commandList.contains(string.toLowerCase());
+		private UserInput(Predicate<String> matcher) {
+			this(matcher, string -> Collections.emptyList());
+		}
+		
+		private UserInput(Predicate<String> matcher, Function<String,List<String>> paramParser) {
+			this.test = matcher;
+			this.paramParser = paramParser;
 		}
 		
 		public boolean matches(String inputString) {
 			return test.test(inputString);
+		}
+		
+		public List<String> getParams(String inputString) { // TODO abstract more
+			return paramParser.apply(inputString);
 		}
 		
 		public static UserInput get(String inputString) {
@@ -96,6 +133,18 @@ public class Composer {
 				if (command.matches(inputString))
 					return command;
 			return null;
+		}
+		
+		private static Predicate<String> startsWithAny(String... strings) {
+			final List<String> stringList = Arrays.asList(strings);
+			return string -> {
+				if (string == null)
+					return false;
+				for (String known : stringList)
+					if (string.toLowerCase().startsWith(known.toLowerCase()))
+						return true;
+				return false;
+			};
 		}
 	}
 }

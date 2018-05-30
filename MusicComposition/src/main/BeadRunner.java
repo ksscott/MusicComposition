@@ -208,7 +208,7 @@ public class BeadRunner {
 		public void run() {
 			Scanner scanner = new Scanner(System.in);
 			while(!stopped)
-				addUserInput(scanner.next());
+				addUserInput(scanner.nextLine());
 			scanner.close();
 		}
 		
