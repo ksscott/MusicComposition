@@ -9,6 +9,7 @@ import theory.MidiPitch;
 import theory.Note;
 import theory.Scale;
 import theory.ScaleImpl;
+import theory.Tempo;
 
 public class TwelveBarBluesStrategy implements ComposingStrategy {
 	
@@ -62,7 +63,7 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 //			}
 //		}
 		
-		measure.setBpm(120);
+		measure.setBpm(Tempo.ALLEGRETTO.getBpm());
 		
 		return measure;
 	}

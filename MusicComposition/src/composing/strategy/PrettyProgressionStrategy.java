@@ -12,6 +12,7 @@ import theory.Key;
 import theory.Measure;
 import theory.MidiNote;
 import theory.MidiPitch;
+import theory.Tempo;
 
 public class PrettyProgressionStrategy implements ComposingStrategy {
 	
@@ -84,7 +85,7 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		
 		currentChord = progressions.getNext(currentChord); // hack
 		
-		measure.setBpm(80);
+		measure.setBpm(Tempo.ADAGIETTO.getBpm());
 		
 		return measure;
 	}
