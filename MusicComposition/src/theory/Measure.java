@@ -10,7 +10,7 @@ import theory.analysis.Phrase;
 
 public class Measure {
 	
-	// key signature:
+	// time signature:
 	private int beats;
 	private double beatValue;
 	private double bpm = 60;
