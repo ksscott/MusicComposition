@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Queue;
 
 import composing.IncompleteComposition;
+import theory.Dynamic;
 import theory.Key;
 import theory.Measure;
 import theory.MidiNote;
@@ -16,7 +17,7 @@ import theory.Tempo;
 
 public class PrettyProgressionStrategy implements ComposingStrategy {
 	
-	protected int octave = 4;
+	protected int octave = 3;
 	protected Key key;
 	protected int tonic;
 	private ChordProgressions progressions;
@@ -30,20 +31,20 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		this.progressions = new ChordProgressions(key);
 		progressions.put(1,4);
 		progressions.put(1,6);
-//		progressions.put(1,3);
-		progressions.put(4,5);
+		progressions.put(1,3);
+		progressions.put(4,5,2);
 		progressions.put(4,6);
-//		progressions.put(4,3);
+		progressions.put(4,3);
 		progressions.put(4,2);
-		progressions.put(6,4);
-		progressions.put(6,2);
+		progressions.put(6,4,2);
+		progressions.put(6,2,2);
 		progressions.put(6,1);
 		progressions.put(3,1);
 		progressions.put(3,6);
-		progressions.put(5,1);
+		progressions.put(5,1,3);
 		progressions.put(5,6);
 		progressions.put(5,4);
-		progressions.put(2,5);
+		progressions.put(2,5,2);
 		progressions.put(2,4);
 		progressions.put(2,7);
 		progressions.put(7,5);
@@ -103,7 +104,10 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		
 		for (int i=0; i<beats; i++) {
 			for (MidiPitch pitch : pitches) {
-				measure.addNote(new MidiNote(pitch, beatValue), i*beatValue);
+				final MidiNote note = new MidiNote(pitch, beatValue);
+				if (i != 0)
+					note.setDynamic(Dynamic.MEZZO_PIANO);
+				measure.addNote(note, i*beatValue);
 			}
 		}
 		
@@ -130,7 +134,18 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		}
 		
 		public void put(int from, int to) {
-			nodes.get(from).addSuccessor(nodes.get(to));
+			put(from, to, 1);
+		}
+		
+		public void put(int from, int to, int weight) {
+			ProgressionNode fromNode = nodes.get(from);
+			ProgressionNode toNode = nodes.get(to);
+			for (int i=0; i<weight; i++)
+				fromNode.addSuccessor(toNode);
+		}
+		
+		public void remove(int from, int to) {
+			nodes.get(from).removeSuccessor(nodes.get(to));
 		}
 		
 		public int getNext(int from) {
@@ -153,6 +168,12 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 			
 			public void addSuccessor(ProgressionNode nextChord) {
 				successors.add(nextChord);
+			}
+			
+			public void removeSuccessor(ProgressionNode formerSuccessor) {
+				List<ProgressionNode> list = new ArrayList<>();
+				list.add(formerSuccessor);
+				successors.removeAll(list);
 			}
 			
 //			public Set<ProgressionNode> getSuccessors() {
