@@ -62,6 +62,8 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 //			}
 //		}
 		
+		measure.setBpm(120);
+		
 		return measure;
 	}
 

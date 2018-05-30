@@ -13,6 +13,7 @@ public class Measure {
 	// key signature:
 	private int beats;
 	private double beatValue;
+	private double bpm = 60;
 	
 	private String metaInfo = "";
 	
@@ -101,6 +102,14 @@ public class Measure {
 	
 	public boolean isEmpty() {
 		return notes.keySet().isEmpty();
+	}
+	
+	public double getBpm() {
+		return bpm;
+	}
+	
+	public void setBpm(double beatsPerMinute) {
+		this.bpm = beatsPerMinute;
 	}
 	
 	public String getMetaInfo() {

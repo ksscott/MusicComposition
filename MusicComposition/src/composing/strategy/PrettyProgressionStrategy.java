@@ -84,6 +84,8 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		
 		currentChord = progressions.getNext(currentChord); // hack
 		
+		measure.setBpm(80);
+		
 		return measure;
 	}
 	

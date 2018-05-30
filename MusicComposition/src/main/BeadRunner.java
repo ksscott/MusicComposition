@@ -45,7 +45,7 @@ public class BeadRunner {
 		 * This example is more sophisticated than the previous ones. It uses
 		 * nested code.
 		 */
-		Clock clock = new Clock(ac, 700);
+		Clock clock = new Clock(ac, 500);
 		clock.addMessageListener(
 				//this is the on-the-fly bead
 				new Bead() {
@@ -80,7 +80,7 @@ public class BeadRunner {
 						if (c.isBeat()) {
 //							System.out.println("Beat: " + beat);
 //							System.out.println("Count this measure: " + countThisMeasure);
-							if (beat >= startOfMeasure + measure.beats()) { // is new measure
+							if (beat >= startOfMeasure + measure.beats() || beat == 0) { // is new measure
 //								System.out.println("Beats this measure: " + measure.beats());
 								if (measures.size() < 2) {
 									final Measure nextMeasure = composer.writeNextMeasure();
@@ -88,6 +88,8 @@ public class BeadRunner {
 										measures.add(nextMeasure);
 								}
 								measure = measures.poll(); // TODO maybe use multiple threads to make this smoother
+								int millisPerSec = (int) (60000 / measure.getBpm());
+								c.getIntervalUGen().setValue(millisPerSec);
 								System.out.println("Measure: " + ++measuresBegun + " " + measure.getMetaInfo());
 								startOfMeasure = beat;
 							}
