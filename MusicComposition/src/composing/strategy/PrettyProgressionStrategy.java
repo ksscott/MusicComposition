@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import composing.IncompleteComposition;
 import theory.Dynamic;
@@ -21,8 +23,6 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 	protected Key key;
 	protected int tonic;
 	private ChordProgressions progressions;
-	
-	private int currentChord; // hack
 	
 	public PrettyProgressionStrategy(Key key) {
 		this.key = key;
@@ -49,8 +49,6 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		progressions.put(2,7);
 		progressions.put(7,5);
 		progressions.put(7,1);
-		
-		currentChord = 1;
 	}
 	
 	@Override
@@ -79,12 +77,17 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 	 * @return
 	 */
 	protected Measure composeBar(IncompleteComposition composition) {
-//		System.out.println("Previous chord: " + currentChord);
-//		System.out.println("Current chord: " + currentChord);
+		List<Measure> measures = composition.getMeasures();
+		int currentChord = 1;
+		if (!measures.isEmpty()) {
+			String metaInfo = measures.get(measures.size()-1).getMetaInfo();
+			Matcher matcher = Pattern.compile("(\\()"+"([0-9])"+"(\\))").matcher(metaInfo);
+			matcher.matches(); // I don't understand this API, apparently
+			int previousChord = Integer.valueOf(matcher.group(2));
+			currentChord = progressions.getNext(previousChord);
+		}
 		Measure measure = backgroundChord(currentChord);
 		measure.setMetaInfo("(" + currentChord + ")");
-		
-		currentChord = progressions.getNext(currentChord); // hack
 		
 		measure.setBpm(Tempo.ADAGIETTO.getBpm());
 		
@@ -93,8 +96,6 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 	
 	// TODO probably accept a parameter besides int
 	private Measure backgroundChord(int scaleDegree) {
-//		System.out.println("Composing chord: " + scaleDegree);
-		
 		int beats = 4;
 		double beatValue = 1/4.0;
 		Measure measure = new Measure(beats, beatValue);
@@ -144,6 +145,7 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 				fromNode.addSuccessor(toNode);
 		}
 		
+		@SuppressWarnings("unused")
 		public void remove(int from, int to) {
 			nodes.get(from).removeSuccessor(nodes.get(to));
 		}
