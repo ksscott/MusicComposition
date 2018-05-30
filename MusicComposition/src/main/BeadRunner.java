@@ -1,6 +1,12 @@
 package main;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.Scanner;
 
 import composing.Composer;
 import net.beadsproject.beads.core.AudioContext;
@@ -17,8 +23,15 @@ import theory.Measure;
 import theory.MidiNote;
 
 public class BeadRunner {
+	
+	private static Queue<String> userInputs = new PriorityQueue<>();
+	private static boolean empty = true;
+	private static final List<String> STOP_COMMANDS = Arrays.asList(new String[] { "stop", "end" });
 
 	public static void main(String[] args) {
+		InputThread inputThread = new InputThread();
+		inputThread.start();
+		
 		final AudioContext ac;
 
 		ac = new AudioContext();
@@ -36,16 +49,31 @@ public class BeadRunner {
 		clock.addMessageListener(
 				//this is the on-the-fly bead
 				new Bead() {
+					Queue<Measure> measures = new ArrayDeque<>();
 					Composer composer = new Composer();
-					Measure measure = composer.beginComposing();
+					{ measures.add(composer.beginComposing()); }
+					Measure measure = measures.poll();
 					int startOfMeasure = 0;
-					int measures = 0;
+					int measuresBegun = 0;
 					float maxVolume = 0.15f;
-					{ System.out.println("Measure: " + ++measures + " " + measure.getMetaInfo()); }
+					{ System.out.println("Measure: " + ++measuresBegun + " " + measure.getMetaInfo()); }
 					
 					int pitch;
 					public void messageReceived(Bead message) {
 						Clock c = (Clock) message;
+						
+						if (!empty) {
+							final String input = receiveUserInput();
+							if (STOP_COMMANDS.contains(input)) {
+								// TODO figure out best stopping procedure
+								inputThread.end();
+								composer.finishComposing();
+								c.kill();
+							}
+							Measure onTheFlyMeasure = composer.receiveInput(input);
+							if (onTheFlyMeasure != null)
+								measures.add(onTheFlyMeasure);
+						}
 						
 						int beat = c.getBeatCount();
 						
@@ -54,8 +82,13 @@ public class BeadRunner {
 //							System.out.println("Count this measure: " + countThisMeasure);
 							if (beat >= startOfMeasure + measure.beats()) { // is new measure
 //								System.out.println("Beats this measure: " + measure.beats());
-								measure = composer.writeNextMeasure();
-								System.out.println("Measure: " + ++measures + " " + measure.getMetaInfo());
+								if (measures.size() < 2) {
+									final Measure nextMeasure = composer.writeNextMeasure();
+									if (nextMeasure != null)
+										measures.add(nextMeasure);
+								}
+								measure = measures.poll(); // TODO maybe use multiple threads to make this smoother
+								System.out.println("Measure: " + ++measuresBegun + " " + measure.getMetaInfo());
 								startOfMeasure = beat;
 							}
 //							System.out.println("Time: " + time);
@@ -147,6 +180,42 @@ public class BeadRunner {
 	 */
 	public static double volume(Dynamic dynamic) {
 		return (Math.atan(dynamic.getValue()) / Math.PI) + 0.5;
+	}
+	
+	private static synchronized void addUserInput(String input) {
+		userInputs.add(input);
+		empty = false;
+	}
+	
+	private static synchronized String receiveUserInput() {
+		String input = userInputs.poll();
+		if (userInputs.isEmpty())
+			empty = true;
+		return input;
+	}
+	
+	@SuppressWarnings("unused")
+	private static synchronized List<String> receiveAllUserInputs() {
+		List<String> inputs = new ArrayList<>(userInputs);
+		empty = true;
+		return inputs;
+	}
+	
+	public static class InputThread extends Thread {
+		
+		private boolean stopped;
+		
+		@Override
+		public void run() {
+			Scanner scanner = new Scanner(System.in);
+			while(!stopped)
+				addUserInput(scanner.next());
+			scanner.close();
+		}
+		
+		public void end() {
+			stopped = true;
+		}
 	}
 
 }

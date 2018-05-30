@@ -87,4 +87,9 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 		return (composition.getMeasures().size() + composition.getFuture().size()) % 12;
 	}
 	
+	@Override
+	public String toString() {
+		return "Twelve Bar Blues";
+	}
+	
 }

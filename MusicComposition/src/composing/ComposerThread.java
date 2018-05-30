@@ -18,13 +18,13 @@ public class ComposerThread extends Thread {
 	
 	@Override
 	public void run() {
+		System.out.println("Composing " + strategy);
 		while (!stopped) {
 			if (!paused)
 				if (strategy.iterate(composition))
 					paused = true;
 			try { Thread.sleep(100); } catch (Exception e) {}
 		}
-		System.out.println("Done composing");
 	}
 	
 	public Measure writeNextMeasure() {
@@ -33,8 +33,13 @@ public class ComposerThread extends Thread {
 		return measure;
 	}
 	
+	ComposingStrategy getStrategy() {
+		return strategy;
+	}
+	
 	public Composition stopComposing() {
 		this.stopped = true;
+		System.out.println("Done composing " + strategy);
 		return composition.finishComposition();
 	}
 

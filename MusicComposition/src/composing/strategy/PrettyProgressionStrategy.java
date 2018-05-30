@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Queue;
 
 import composing.IncompleteComposition;
-import theory.Chord;
 import theory.Key;
 import theory.Measure;
 import theory.MidiNote;
@@ -163,5 +162,11 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		}
 		
 	}
+	
+
+	public String toString() {
+		return "Pretty Chord Progression";
+	}
+	
 
 }
