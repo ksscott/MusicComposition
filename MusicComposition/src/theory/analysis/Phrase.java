@@ -16,18 +16,28 @@ public class Phrase {
 	}
 	
 	public double getStart() {
+		// earliest note start
 		if (notes.isEmpty())
 			return 0;
 		double earliest = Integer.MAX_VALUE;
 		for (Double dub : notes.keySet()) {
 			if (!notes.get(dub).isEmpty())
-				earliest = Math.max(earliest, dub);
+				earliest = Math.min(earliest, dub);
 		}
 		return earliest;
 	}
 	
 	public double getEnd() {
-		return latestNoteEnd();
+		// latest note end
+		if (notes.isEmpty())
+			return 0;
+		double latest = Integer.MIN_VALUE;
+		for (Double dub : notes.keySet()) {
+			for (MidiNote note : notes.get(dub)) {
+				latest = Math.max(latest, dub + note.getDuration());
+			}
+		}
+		return latest;
 	}
 	
 	public Map<Double,List<MidiNote>> getNotes() {
@@ -35,7 +45,7 @@ public class Phrase {
 	}
 	
 	public void addNote(MidiNote note) {
-		addNote(note, latestNoteEnd());
+		addNote(note, getEnd());
 	}
 	
 	public void addNote(MidiNote note, double offset) {
@@ -59,16 +69,15 @@ public class Phrase {
 		return phrase;
 	}
 	
-	private double latestNoteEnd() {
-		if (notes.isEmpty())
-			return 0;
-		double latest = Integer.MIN_VALUE;
-		for (Double dub : notes.keySet()) {
-			for (MidiNote note : notes.get(dub)) {
-				latest = Math.max(latest, dub + note.getDuration());
-			}
-		}
-		return latest;
+	public void absorb(Phrase other) {
+		absorb(other, 0);
+	}
+	
+	public void absorb(Phrase other, double offset) {
+		Map<Double, List<MidiNote>> otherNotes = other.notes;
+		for (Double key : otherNotes.keySet())
+			for (MidiNote note : otherNotes.get(key))
+				addNote(note, key + offset);
 	}
 	
 }
