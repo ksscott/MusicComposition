@@ -6,6 +6,8 @@ import theory.MidiPitch;
 import theory.analysis.Phrase;
 
 public class Ornament {
+	
+	// Ornaments taken from Wikipedia: "Ornament (music)"
 
 	private Ornament(){} // util class
 	
@@ -61,12 +63,30 @@ public class Ornament {
 		return phrase;
 	}
 	
-//	public static Phrase turn(MidiNote note, Key key, double beatValue) {
-//		Phrase phrase = new Phrase();
-//		MidiPitch pitch = new MidiPitch(note.getPitch());
-//		requirePitchInKey(pitch, key);
-//		return phrase;
-//	}
+	public static Phrase turn(MidiNote note, Key key) {
+		return turn(note, key, note.getDuration() / 2.0); // FIXME
+	}
+	
+	public static Phrase turn(MidiNote note, Key key, double turnDuration) {
+		Phrase phrase = new Phrase();
+		
+		if (turnDuration >= note.getDuration() || turnDuration <= 0)
+			throw new IllegalArgumentException("Turn duration must be greater than zero but less than the length of the adorned note.");
+		int notePitch = note.getPitch();
+		MidiPitch pitch = new MidiPitch(notePitch);
+		requirePitchInKey(pitch, key);
+		
+		MidiPitch upperPitch = key.stepsAbove(1, pitch);
+		MidiPitch lowerPitch = key.stepsAbove(-1, pitch);
+		
+		phrase.add(new MidiNote(notePitch, turnDuration/2.0));
+		phrase.add(new MidiNote(upperPitch, turnDuration/6.0));
+		phrase.add(new MidiNote(notePitch, turnDuration/6.0));
+		phrase.add(new MidiNote(lowerPitch, turnDuration/6.0));
+		phrase.add(new MidiNote(notePitch, note.getDuration() - turnDuration));
+		
+		return phrase;
+	}
 	
 	/**
 	 * Defaults to half the duration of the adorned note.

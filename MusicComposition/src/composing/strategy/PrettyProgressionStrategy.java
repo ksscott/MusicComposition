@@ -106,7 +106,7 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		Measure measure = backgroundChord(currentChord);
 		measure.setMetaInfo("(" + currentChord + ")");
 		
-		measure.setBpm(Tempo.ADAGIETTO.getBpm());
+		measure.setBpm(Tempo.ADAGIO.getBpm());
 		
 		return measure;
 	}

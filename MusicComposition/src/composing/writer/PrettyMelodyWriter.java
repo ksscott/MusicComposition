@@ -1,12 +1,8 @@
 package composing.writer;
 
 import static composing.RandomUtil.*;
-import static composing.writer.Ornament.appoggiatura;
-import static composing.writer.Ornament.lowerMordent;
-import static composing.writer.Ornament.upperMordent;
+import static composing.writer.Ornament.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -62,6 +58,11 @@ public class PrettyMelodyWriter implements MelodyWriter {
 			key = new Key(tonicWhyNot, scaleSureOk);
 		}
 		
+		int ornamentChance = 40;
+		int appoggiaturaChance = 70; // = (ornamentChance * XX)% 
+		int mordentChance = 90; // = (ornamentChance * (100 - appoggiaturaChance) * XX)%
+//		int turnChance = 100; // = (ornamentChance * (100 - appoggiaturaChance) * (100 - mordentChance))%
+		
 		for (Measure measure : measures) {
 			Phrase measurePhrase = new Phrase();
 			Note startingNote = key.note(random(key.getScale().intervals().length) + 1);
@@ -75,13 +76,17 @@ public class PrettyMelodyWriter implements MelodyWriter {
 				// Notes at time 0.00: 55 58 62 70 69 
 				// Notes at time 0.13: 69 
 				// Notes at time 0.25: 55 58 62 70 
-				if (roll(40)) {
-					if (roll(70))
+				if (roll(ornamentChance)) {
+					if (roll(appoggiaturaChance))
 						measurePhrase.add(appoggiatura(midiNote, key));
-					else if (roll(50))
-						measurePhrase.add(lowerMordent(midiNote, key));
-					else
-						measurePhrase.add(upperMordent(midiNote, key));
+					else if (roll(mordentChance)) {
+						if (roll(50))
+							measurePhrase.add(lowerMordent(midiNote, key));
+						else
+							measurePhrase.add(upperMordent(midiNote, key));
+					} else {
+						measurePhrase.add(turn(midiNote, key));
+					}
 				} else {
 					measurePhrase.add(midiNote);
 				}
