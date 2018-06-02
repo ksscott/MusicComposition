@@ -112,6 +112,7 @@ public class Key {
 		return new Note(Letter.A, Accidental.FLAT); // didn't check below A or above G, must be Ab
 	}
 	
+	/** @see #inferDiatonic(Collection) */
 	public static Key inferDiatonic(Set<Note> notes) {
 		return inferDiatonic(notes.stream().map(note -> new MidiPitch(note, 1)).collect(Collectors.toSet()));
 	}
@@ -168,6 +169,47 @@ public class Key {
 			throw new IllegalArgumentException("Notes given can belong to more than one possible key.");
 		else
 			throw new IllegalArgumentException("Notes given cannot fit in a diatonic scale.");
+	}
+	
+	/** @see #inferKey(Collection) */
+	public static Key inferKey(Set<Note> notes) {
+		return inferKey(notes.stream().map(note -> new MidiPitch(note, 1)).collect(Collectors.toSet()));
+	}
+	
+	/**
+	 * Attempt to infer a diatonic key, or else create a key 
+	 * from all given pitches and an arbitrarily chosen tonic.
+	 * 
+	 * @see #inferDiatonic(Collection)
+	 */
+	public static Key inferKey(Collection<MidiPitch> pitches) {
+		Key key;
+		try {
+			key = Key.inferDiatonic(pitches);
+			System.out.println("Detecting key " + key);
+		} catch (IllegalArgumentException e) {
+			// too many or too few pitches to decide on a single key
+			// let's just work with what we know
+			List<Integer> pitchList = pitches.stream()
+					.map(MidiPitch::get)
+					.map(integer -> modPos(integer, 12)) // causes arbitrary ordering
+					.distinct()
+					.sorted()
+					.collect(Collectors.toList());
+			int[] intervals = new int[pitchList.size()];
+//			System.out.println("tonicWhyNot: " + newMidiPitch.get());
+			for (int i=0; i<intervals.length-1; i++)
+				intervals[i] = pitchList.get(i+1) - pitchList.get(i);
+			int last = intervals.length-1;
+			intervals[last] = 12 - (pitchList.get(last) - pitchList.get(0));
+//			System.out.println("CREATED INTERVALS:");
+//			for (int interval : intervals)
+//				System.out.println("" + interval);
+			Note tonicWhyNot = Key.toFlatNote(new MidiPitch(pitchList.get(0)));
+			Scale scaleSureOk = new ScaleImpl(intervals);
+			key = new Key(tonicWhyNot, scaleSureOk);
+		}
+		return key;
 	}
 	
 	// unsure if this is the best method signature

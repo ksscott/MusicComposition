@@ -30,33 +30,7 @@ public class PrettyMelodyWriter implements MelodyWriter {
 				.map(MidiNote::getPitch)
 				.map(MidiPitch::new)
 				.collect(Collectors.toSet());
-		Key key;
-		try {
-			key = Key.inferDiatonic(allPitchesInAllMeasures);
-			System.out.println("Detecting key " + key);
-		} catch (IllegalArgumentException e) {
-			// too many or too few pitches to decide on a single key
-			// let's just work with what we know
-			// TODO probably incorporate this into inferDiatonic()
-			List<Integer> pitchList = allPitchesInAllMeasures.stream()
-					.map(MidiPitch::get)
-					.map(integer -> modPos(integer, 12)) // causes arbitrary ordering
-					.distinct()
-					.sorted()
-					.collect(Collectors.toList());
-			int[] intervals = new int[pitchList.size()];
-//			System.out.println("tonicWhyNot: " + newMidiPitch.get());
-			for (int i=0; i<intervals.length-1; i++)
-				intervals[i] = pitchList.get(i+1) - pitchList.get(i);
-			int last = intervals.length-1;
-			intervals[last] = 12 - (pitchList.get(last) - pitchList.get(0));
-//			System.out.println("CREATED INTERVALS:");
-//			for (int interval : intervals)
-//				System.out.println("" + interval);
-			Note tonicWhyNot = Key.toFlatNote(new MidiPitch(pitchList.get(0)));
-			Scale scaleSureOk = new ScaleImpl(intervals);
-			key = new Key(tonicWhyNot, scaleSureOk);
-		}
+		Key key = Key.inferKey(allPitchesInAllMeasures);
 		
 		int ornamentChance = 40;
 		int appoggiaturaChance = 70; // = (ornamentChance * XX)% 
