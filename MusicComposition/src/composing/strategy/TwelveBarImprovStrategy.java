@@ -1,5 +1,7 @@
 package composing.strategy;
 
+import static composing.RandomUtil.*;
+
 import composing.IncompleteComposition;
 import theory.Accidental;
 import theory.Dynamic;
@@ -83,14 +85,14 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 				// play on downbeat
 				final MidiNote note = new MidiNote(pitches[noteIndex], 2/3.0*beatValue);
 				note.setDynamic(Dynamic.MEZZO_PIANO);
-				measure.addNote(note, i*beatValue);
+				measure.add(note, i*beatValue);
 				noteIndex += step();
 				noteIndex = (noteIndex + pitches.length) % pitches.length;
 			}
 			if (roll(offBeatChance)) {
 				// play synchopation
 				final double location = i*beatValue + 2/3.0*beatValue;
-				measure.addNote(new MidiNote(pitches[noteIndex], 1/3.0*beatValue), location);
+				measure.add(new MidiNote(pitches[noteIndex], 1/3.0*beatValue), location);
 				noteIndex += step();
 				noteIndex = (noteIndex + pitches.length) % pitches.length;
 			}
@@ -103,12 +105,12 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 		double beatValue = measure.beatValue();
 		for (int i=0; i<measure.beats(); i++) {
 			if (i != 0) {
-				MidiNote note = new MidiNote(tonic + octavesUp*12 + 7, 1/3.0*beatValue);
-				measure.addNote(note, i*beatValue);
+				MidiNote note = new MidiNote(tonic.get() + octavesUp*12 + 7, 1/3.0*beatValue);
+				measure.add(note, i*beatValue);
 			}
-			MidiNote note = new MidiNote(tonic + octavesUp*12 + 7, 1/3.0*beatValue);
+			MidiNote note = new MidiNote(tonic.get() + octavesUp*12 + 7, 1/3.0*beatValue);
 			final double location = i*beatValue + 2/3.0*beatValue;
-			measure.addNote(note, location);
+			measure.add(note, location);
 		}
 		return measure;
 	}
@@ -116,11 +118,11 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 	private void setScale(Scale scale) {
 		int[] intervals = scale.intervalsFromRoot();
 		pitches = new int[intervals.length+1]; // include root and also octave up
-		pitches[0] = this.tonic + 12*octavesUp;
+		pitches[0] = this.tonic.get() + 12*octavesUp;
 		for (int i=0; i<intervals.length; i++) {
-			pitches[i+1] = this.tonic + intervals[i] + 12*octavesUp;
+			pitches[i+1] = this.tonic.get() + intervals[i] + 12*octavesUp;
 		}
-		pitches[intervals.length] = this.tonic + 12*(octavesUp+1); // the octave on top
+		pitches[intervals.length] = this.tonic.get() + 12*(octavesUp+1); // the octave on top
 		
 		// make sure noteIndex is in bounds
 		if (noteIndex >= pitches.length)
@@ -135,15 +137,4 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 		return steps[random(steps.length)].pitchAdjustment();
 	}
 	
-	public static boolean roll(int percentChance) {
-		return Math.random()*100 < percentChance;
-	}
-	
-	public static int random(int max) {
-		return (int) (Math.random()*max);
-	}
-	
-	public static int random(int min, int max) {
-		return min + ((int) (Math.random()*max));
-	}
 }

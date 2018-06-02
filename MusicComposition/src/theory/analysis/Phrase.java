@@ -40,15 +40,19 @@ public class Phrase {
 		return latest;
 	}
 	
+	public double length() {
+		return getEnd() - getStart();
+	}
+	
 	public Map<Double,List<MidiNote>> getNotes() {
 		return new HashMap<>(notes);
 	}
 	
-	public void addNote(MidiNote note) {
-		addNote(note, getEnd());
+	public void add(MidiNote note) {
+		add(note, getEnd());
 	}
 	
-	public void addNote(MidiNote note, double offset) {
+	public void add(MidiNote note, double offset) {
 		List<MidiNote> list = notes.get(new Double(offset));
 		if (list == null) {
 			list = new ArrayList<>();
@@ -57,16 +61,12 @@ public class Phrase {
 		list.add(note);
 	}
 	
-	public Phrase expand(double timeRatio) {
-		Phrase phrase = new Phrase();
-		for (Double time : notes.keySet()) {
-			List<MidiNote> list = notes.get(time);
-			List<MidiNote> newList = new ArrayList<>();
-			for (MidiNote note : list)
-				newList.add(new MidiNote(note.getPitch(), note.getDuration()*timeRatio));
-			phrase.notes.put(time*timeRatio, list);
-		}
-		return phrase;
+	public void add(Phrase other) {
+		absorb(other, getEnd());
+	}
+	
+	public void add(Phrase other, double offset) {
+		absorb(other, offset);
 	}
 	
 	public void absorb(Phrase other) {
@@ -77,7 +77,19 @@ public class Phrase {
 		Map<Double, List<MidiNote>> otherNotes = other.notes;
 		for (Double key : otherNotes.keySet())
 			for (MidiNote note : otherNotes.get(key))
-				addNote(note, key + offset);
+				add(note, key + offset);
+	}
+
+	public Phrase expand(double timeRatio) {
+		Phrase phrase = new Phrase();
+		for (Double time : notes.keySet()) {
+			List<MidiNote> list = notes.get(time);
+			List<MidiNote> newList = new ArrayList<>();
+			for (MidiNote note : list)
+				newList.add(new MidiNote(note.getPitch(), note.getDuration()*timeRatio));
+			phrase.notes.put(time*timeRatio, list);
+		}
+		return phrase;
 	}
 	
 }

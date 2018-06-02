@@ -13,12 +13,12 @@ import theory.Tempo;
 
 public class TwelveBarBluesStrategy implements ComposingStrategy {
 	
-	protected int tonic;
+	protected MidiPitch tonic;
 	private int[] chordsHalfSteps = new int[] { 0, 0, 0, 0, 5, 5, 0, 0, 7, 5, 0, 0 };
 	private Scale baseline = new ScaleImpl(new int[] { 0, 4, 7, 9, 10 });
 
 	public TwelveBarBluesStrategy(Note tonic) {
-		this.tonic = MidiPitch.inOctave(tonic, 3);
+		this.tonic = new MidiPitch(tonic, 3);
 	}
 	
 	@Override
@@ -49,7 +49,7 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 	protected Measure composeBar(IncompleteComposition composition) {
 		int currentBar = getCurrentBar(composition);
 		Measure measure;
-		int chordRoot = tonic + chordsHalfSteps[currentBar];
+		int chordRoot = tonic.get() + chordsHalfSteps[currentBar];
 		
 		if (currentBar % 2 == 0 || currentBar == 9) // odd measures (but also 9, which is "even")
 			measure = composeArpeggioA(chordRoot);
@@ -73,7 +73,7 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 		double beatValue = 1/4.0;
 		Measure measure = new Measure(beats, beatValue);
 		for (int i=0; i<beats; i++)
-			measure.addNote(new MidiNote(baseline.intervals()[i] + root, beatValue));
+			measure.add(new MidiNote(baseline.intervals()[i] + root, beatValue));
 		return measure;
 	}
 
@@ -82,7 +82,7 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 		double beatValue = 1/4.0;
 		Measure measure = new Measure(beats, beatValue);
 		for (int i=0; i<beats; i++)
-			measure.addNote(new MidiNote(baseline.intervals()[4-i] + root, beatValue));
+			measure.add(new MidiNote(baseline.intervals()[4-i] + root, beatValue));
 		return measure;
 	}
 	

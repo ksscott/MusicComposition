@@ -1,10 +1,13 @@
 package theory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.BinaryOperator;
 
 import theory.analysis.Phrase;
 
@@ -27,8 +30,12 @@ public class Measure {
 		this.notes = new HashMap<>();
 	}
 	
+	/** @return number of beats in this measure */
 	public int beats() { return beats; }
+	/** @return duration of each beat as a fraction of a whole note */
 	public double beatValue() { return beatValue; }
+	/** @return duration of this measure as a fraction of a whole note, equivalent to fraction created by time signature */
+	public double length() { return beats()*beatValue(); }
 
 	public int getMeasureNumber() { return measureNumber; }
 	public void setMeasureNumber(int number) { this.measureNumber = number; }
@@ -45,11 +52,11 @@ public class Measure {
 	 * @param note
 	 * @return this measure
 	 */
-	public Measure addNote(MidiNote note) {
-		return addNote(note, latestNoteEnd());
+	public Measure add(MidiNote note) {
+		return add(note, latestNoteEnd());
 	}
 	
-	public Measure addNote(MidiNote note, double offset) {
+	public Measure add(MidiNote note, double offset) {
 		if (offset < 0)
 			throw new IllegalArgumentException("Cannot add notes before start of measure.");
 		if (offset + note.getDuration() > beats * beatValue)
@@ -64,12 +71,12 @@ public class Measure {
 		return this;
 	}
 	
-	public Measure addPhrase(Phrase phrase) {
-		return addPhrase(phrase, latestNoteEnd());
+	public Measure add(Phrase phrase) {
+		return add(phrase, latestNoteEnd());
 	}
 	
-	public Measure addPhrase(Phrase phrase, double offset) {
-		if (phrase.getStart() < 0)
+	public Measure add(Phrase phrase, double offset) {
+		if (offset + phrase.getStart() < 0)
 			throw new IllegalArgumentException("No part of the phrase can start before the start of the measure.");
 		if (offset + phrase.getEnd() > beats * beatValue)
 			throw new IllegalArgumentException("Phrase would end after end of measure.");
@@ -77,7 +84,7 @@ public class Measure {
 		Map<Double, List<MidiNote>> phraseNotes = phrase.getNotes();
 		for (Double time : phraseNotes.keySet())
 			for (MidiNote note : phraseNotes.get(time))
-				addNote(note, offset + time);
+				add(note, offset + time);
 		
 		return this;
 	}
@@ -115,6 +122,34 @@ public class Measure {
 			throw new IllegalArgumentException("Cannot absorb a measure with a different key signature.");
 		notes.putAll(other.notes);
 		setMetaInfo(metaInfo + "\n" + other.getMetaInfo());
+	}
+	
+	public static void writeOnto(Phrase phrase, List<Measure> measures, double offset) {
+		if (offset + phrase.getStart() < 0)
+			throw new IllegalArgumentException("Phrase would start before start of measures.");
+		Optional<Double> totalLength = measures.stream().map(Measure::length).reduce((a, b) -> a+b);
+		if (!totalLength.isPresent() || totalLength.get() < offset + phrase.getEnd())
+			throw new IllegalArgumentException("Given measures are too short to accommodate the given phrase.");
+		
+		int measureIndex = 0;
+		Double ticker = 0.0; // slide the ticker to the start of each measure
+		Map<Double, List<MidiNote>> phraseNotes = phrase.getNotes();
+		List<Double> keySet = new ArrayList<>(phraseNotes.keySet());
+		Collections.sort(keySet);
+		
+		for (Double time : keySet) {
+			Measure measure = measures.get(measureIndex);
+			while (time >= ticker + measure.length()) {
+				measure = measures.get(measureIndex++);
+				ticker += measure.length();
+			}
+			double location = time - ticker;
+//			System.out.println("Writing, time/ticker/location/measureIndex " 
+//					+ time + "/" + ticker + "/" + location + "/" + measureIndex);
+			List<MidiNote> notes = phraseNotes.get(time);
+			for (MidiNote note : notes)
+				measure.add(note, location);
+		}
 	}
 
 	private double latestNoteEnd() {

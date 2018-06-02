@@ -1,8 +1,13 @@
 package theory;
 
+import static composing.RandomUtil.*;
 import static theory.Mode.*;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Key {
 	
@@ -33,20 +38,140 @@ public class Key {
 		return Arrays.asList(scale.intervalsFromRoot()).contains(tonic.halfStepsTo(note));
 	}
 	
+	public boolean contains(MidiPitch pitch) {
+		MidiPitch tonicPitch = new MidiPitch(tonic, 1);
+		int halfStepsAboveTonic = modPos(tonicPitch.halfStepsTo(pitch), scale.getWidth());
+		for (int interval : scale.intervalsFromRoot())
+			if (interval == halfStepsAboveTonic)
+				return true;
+		System.out.println("scale doesn't contain note halfStepsAboveTonic: " + halfStepsAboveTonic);
+		return false;
+	}
+	
+	/**
+	 * Currently doesn't support chromatic pitches; only scale members are supported.
+	 * @param pitch
+	 * @return the scale degree that the given pitch represents in this key
+	 */
+	public int scaleDegree(MidiPitch pitch) {
+		MidiPitch tonicPitch = new MidiPitch(tonic, 1);
+		int halfStepsAboveTonic = tonicPitch.halfStepsTo(pitch) % scale.getWidth();
+		int[] intervals = scale.intervalsFromRoot();
+		for (int i=0; i<intervals.length; i++)
+			if (intervals[i] == halfStepsAboveTonic)
+				return i+1;
+		throw new IllegalArgumentException("The given pitch was not contained in this key.");
+	}
+	
+	/**
+	 * @param steps supports positive or negative number of steps in this key
+	 * @param pitch
+	 * @return the MidiPitch that is the given number of steps above the given pitch in this key.
+	 */
+	public MidiPitch stepsAbove(int steps, MidiPitch pitch) {
+		if (!contains(pitch))
+			throw new IllegalArgumentException("Only supports pitches contained in this key. " + pitch + " -!-> " + this);
+		int scaleDegree = scaleDegree(pitch);
+		int[] intervals = scale.intervals();
+		int length = intervals.length;
+		int currentPitch = pitch.get();
+		for (int i=0; i<steps; i++) {
+			currentPitch += intervals[modPos(i + scaleDegree - 1, length)];
+		}
+		for (int j=0; j>steps; j--) {
+			currentPitch -= intervals[modPos(j + scaleDegree - 2, length)];
+		}
+		return new MidiPitch(currentPitch);
+	}
+	
 	public Note note(int scaleDegree) {
-//		if (scaleDegree < 1)
-//			throw new IllegalArgumentException("Scale degrees less than 1 are not currently supported.");
 		int[] intervals = scale.intervalsFromRoot();
 		int notes = intervals.length;
-		int degree = ((scaleDegree - 1) % notes) + 1;
+		int degree = modPos(scaleDegree - 1, notes) + 1;
 		int steps = intervals[degree - 1];
 		return tonic.halfStepsAbove(steps);
 	}
+	
+	/**
+	 * Gives {@link Accidental#FLAT flat} versions of notes.
+	 * <br> (TODO general implementation requires much more context)
+	 * 
+	 * @param pitch the pitch to be named as a Note
+	 * @return one acceptable Note name for the given MidiPitch
+	 */
+	public static Note toFlatNote(MidiPitch pitch) {
+		final MidiPitch aFour = new MidiPitch(69);
+		int halfStepsAboveA = modPos(aFour.halfStepsTo(pitch), 12);
+		int[] intervals = MINOR.intervalsFromRoot();
+		for (int i=0; i<intervals.length; i++) {
+			if (halfStepsAboveA == intervals[i])
+				return new Note(Letter.values()[i]);
+			if (halfStepsAboveA < intervals[i])
+				return new Note(Letter.values()[i], Accidental.FLAT);
+		}
+		return new Note(Letter.A, Accidental.FLAT); // didn't check below A or above G, must be Ab
+	}
+	
+	public static Key inferDiatonic(Set<Note> notes) {
+		return inferDiatonic(notes.stream().map(note -> new MidiPitch(note, 1)).collect(Collectors.toSet()));
+	}
 
+	/**
+	 * A key can be determined from a collection of pitches if and only if 
+	 * they contain exactly one tritone and the rest of the pitches all lie within 
+	 * either the {@link Mode#LYDIAN} scale or the {@link Mode#LOCRIAN} scale, but not both.
+	 * 
+	 * @param pitches
+	 * @return {@link #MAJOR} key represented by the given pitches
+	 */
+	public static Key inferDiatonic(Collection<MidiPitch> pitches) {
+		if (pitches.size() < 3)
+			throw new IllegalArgumentException("Must have at least 3 pitches to infer a diatonic key.");
+		List<Integer> integers = pitches.stream()
+									   .map(MidiPitch::get)
+									   .map(integer -> integer % 12)
+									   .sorted()
+									   .collect(Collectors.toList());
+		// from here on, the list must represent a set of at least three integers from 0-11
+		List<Integer> faScale = Arrays.stream(LYDIAN.intervalsFromRoot()).boxed().collect(Collectors.toList());
+		List<Integer> tiScale = Arrays.stream(LOCRIAN.intervalsFromRoot()).boxed().collect(Collectors.toList());
+		
+//		System.out.println("Searching for diatonic in pitches: " + integers);
+		
+		boolean diatonicPossible = false;
+		for (int i=0; i<integers.size(); i++) {
+			boolean isTritone = false;
+			boolean notFa = false;
+			boolean notTi = false;
+			for (Integer other : integers) {
+				int diff = modPos(other - integers.get(i), 12);
+				if (diff == 6)
+					isTritone = true;
+				if (!faScale.contains(diff))
+					notFa = true;
+				if (!tiScale.contains(diff))
+					notTi = true;
+			}
+			if (notFa && notTi)
+				continue;
+			// right here, notFa is equal to !notTi
+			if (isTritone) {
+				// all done, return the key converted to major
+				Note faOrTi = toFlatNote(new MidiPitch(integers.get(i)));
+				Note tonic = faOrTi.halfStepsAbove(notTi ? 7 : 1);
+				return new Key(tonic, MAJOR);
+			}
+			// 
+			diatonicPossible = true;
+		}
+		if (diatonicPossible)
+			throw new IllegalArgumentException("Notes given can belong to more than one possible key.");
+		else
+			throw new IllegalArgumentException("Notes given cannot fit in a diatonic scale.");
+	}
+	
 	// unsure if this is the best method signature
 	public Chord chord(int scaleDegree, int octave) {
-		if (scaleDegree == 7)
-			System.out.println("SEVEN");; // debugging break point
 		Chord chord = new Chord();
 		
 		int[] intervals = scale.intervals();
@@ -91,6 +216,11 @@ public class Key {
 		if (!scale.isDiatonic())
 			throw new UnsupportedOperationException("Operation currently only supported for diatonic scales");
 		return new Key(note(scaleDegree), Mode.equivalent(scale).revolve(scaleDegree));
+	}
+	
+	@Override
+	public String toString() {
+		return new MidiPitch(tonic, 1) + " " + scale;
 	}
 	
 }

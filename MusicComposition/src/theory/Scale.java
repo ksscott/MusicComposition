@@ -43,6 +43,13 @@ public interface Scale {
 		return retval;
 	}
 	
+	public default int getWidth() {
+		int width = 0;
+		for (int interval : intervals())
+			width += interval;
+		return width;
+	}
+	
 	public default boolean isDiatonic() {
 		int[] intervals = intervals();
 		int length = intervals.length;

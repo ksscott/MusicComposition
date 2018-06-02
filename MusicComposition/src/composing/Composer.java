@@ -12,6 +12,7 @@ import java.util.function.Predicate;
 import composing.strategy.ComposingStrategy;
 import composing.strategy.PrettyProgressionStrategy;
 import composing.strategy.TwelveBarImprovStrategy;
+import theory.Accidental;
 import theory.Key;
 import theory.Letter;
 import theory.Measure;
@@ -25,7 +26,7 @@ public class Composer {
 	
 	private List<ComposingStrategy> oldTricks = Arrays.asList(new ComposingStrategy[] { 
 					new TwelveBarImprovStrategy(new Note(Letter.C)),
-					new PrettyProgressionStrategy(new Key(new Note(Letter.C), Key.MAJOR)),
+					new PrettyProgressionStrategy(new Key(new Note(Letter.B, Accidental.FLAT), Key.MAJOR)),
 			});
 	
 	/**

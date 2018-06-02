@@ -24,6 +24,14 @@ public class MidiPitch implements Comparable<MidiPitch> {
 		return new MidiPitch(pitch - halfSteps);
 	}
 	
+	/**
+	 * @param other
+	 * @return the number of half steps the given pitch is above this pitch
+	 */
+	public int halfStepsTo(MidiPitch other) {
+		return other.pitch - this.pitch;
+	}
+	
 	public static int inOctave(Note note, int octave) {
 		if (octave < 0 || octave > 8)
 			throw new IllegalArgumentException("Only octaves 0-8 are currently supported");
@@ -33,6 +41,11 @@ public class MidiPitch implements Comparable<MidiPitch> {
 	@Override
 	public int compareTo(MidiPitch o) {
 		return new Integer(pitch).compareTo(new Integer(o.pitch));
+	}
+	
+	@Override
+	public String toString() {
+		return "" + pitch;
 	}
 
 	@Override

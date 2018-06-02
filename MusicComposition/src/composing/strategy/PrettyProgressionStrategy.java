@@ -8,14 +8,17 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import composing.IncompleteComposition;
+import composing.writer.PrettyMelodyWriter;
 import theory.Dynamic;
 import theory.Key;
 import theory.Measure;
 import theory.MidiNote;
 import theory.MidiPitch;
 import theory.Tempo;
+import theory.analysis.Phrase;
 
 public class PrettyProgressionStrategy implements ComposingStrategy {
 	
@@ -36,6 +39,7 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		progressions.put(4,6);
 		progressions.put(4,3);
 		progressions.put(4,2);
+//		progressions.put(4,1); // XXX debugging only
 		progressions.put(6,4,2);
 		progressions.put(6,2,2);
 		progressions.put(6,1);
@@ -60,7 +64,17 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 	public boolean iterate(IncompleteComposition composition) {
 		final Queue<Measure> future = composition.getFuture();
 		future.add(composeBar(composition));
-		return true;
+		if (future.size() >= 8) {
+			try {
+				List<Measure> measuresWithoutMelody = future.stream().filter(measure -> !measure.getMetaInfo().contains("melody")).collect(Collectors.toList());
+				if (measuresWithoutMelody.size() >= 8) {
+					Phrase melody = new PrettyMelodyWriter().writeMelody(measuresWithoutMelody);
+					Measure.writeOnto(melody, measuresWithoutMelody, 0.0);
+					measuresWithoutMelody.forEach(measure -> measure.setMetaInfo(measure.getMetaInfo() + " melody"));
+				}
+			} catch (Exception e) { e.printStackTrace(); }
+		}
+		return future.size() > 16;
 	}
 	
 	/**
@@ -80,8 +94,11 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		List<Measure> measures = composition.getMeasures();
 		int currentChord = 1;
 		if (!measures.isEmpty()) {
+			if (!composition.getFuture().isEmpty())
+				measures = new ArrayList<Measure>(composition.getFuture());
 			String metaInfo = measures.get(measures.size()-1).getMetaInfo();
-			Matcher matcher = Pattern.compile("(\\()"+"([0-9])"+"(\\))").matcher(metaInfo);
+			Measure meas = measures.get(measures.size() - 1);
+			Matcher matcher = Pattern.compile("(\\()"+"([0-9])"+"(\\))"+"(.*)").matcher(metaInfo);
 			matcher.matches(); // I don't understand this API, apparently
 			int previousChord = Integer.valueOf(matcher.group(2));
 			currentChord = progressions.getNext(previousChord);
@@ -108,7 +125,7 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 				final MidiNote note = new MidiNote(pitch, beatValue);
 				if (i != 0)
 					note.setDynamic(Dynamic.MEZZO_PIANO);
-				measure.addNote(note, i*beatValue);
+				measure.add(note, i*beatValue);
 			}
 		}
 		

@@ -30,5 +30,16 @@ public class ScaleImpl implements Scale {
 		System.arraycopy(intervals, 0, retval, 0, intervals.length);
 		return retval;
 	}
+	
+	@Override
+	public String toString() {
+		String name = name();
+		if ("".equals(name)) {
+			for (int interval : intervalsFromRoot())
+				name += " " + interval;
+			name = "[" + name.trim() + "]";
+		}
+		return name;
+	}
 
 }
