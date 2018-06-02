@@ -24,12 +24,10 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 	
 	protected int octave = 3;
 	protected Key key;
-	protected int tonic;
 	private ChordProgressions progressions;
 	
 	public PrettyProgressionStrategy(Key key) {
 		this.key = key;
-		this.tonic = MidiPitch.inOctave(key.getTonic(), octave);
 		
 		this.progressions = new ChordProgressions(key);
 		progressions.put(1,4,2);
