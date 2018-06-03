@@ -33,9 +33,10 @@ public class PrettyMelodyWriter implements MelodyWriter {
 		Key key = Key.inferKey(allPitchesInAllMeasures);
 		
 		int ornamentChance = 40;
-		int appoggiaturaChance = 70; // = (ornamentChance * XX)% 
-		int mordentChance = 90; // = (ornamentChance * (100 - appoggiaturaChance) * XX)%
-//		int turnChance = 100; // = (ornamentChance * (100 - appoggiaturaChance) * (100 - mordentChance))%
+		int appoggiaturaChance = 65; // = (ornamentChance * XX)% 
+		int mordentChance = 90; // = (ornamentChance * (100-appoggiaturaChance) * XX)%
+//		int trillChance = 70; // = (ornamentChance * (100-appoggiaturaChance) * (100-mordentChance) * XX)%
+//		int turnChance = 100; // = (ornamentChance * (100-appoggiaturaChance) * (100-mordentChance) * (100-trillChance))%
 		
 		for (Measure measure : measures) {
 			Phrase measurePhrase = new Phrase();
@@ -58,6 +59,8 @@ public class PrettyMelodyWriter implements MelodyWriter {
 							measurePhrase.add(lowerMordent(midiNote, key));
 						else
 							measurePhrase.add(upperMordent(midiNote, key));
+					} else if (i==measure.beats()){
+						measurePhrase.add(trill(midiNote, key));
 					} else {
 						measurePhrase.add(turn(midiNote, key));
 					}

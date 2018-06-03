@@ -11,7 +11,7 @@ public class Ornament {
 
 	private Ornament(){} // util class
 	
-//	TRILL, // TODO
+//	TRILL,
 //	UPPER_MORDENT,
 //	LOWER_MORDENT,
 //	TURN,
@@ -20,6 +20,30 @@ public class Ornament {
 //	GLISSANDO, // TODO
 //	SCHLEIFER, // TODO
 	;
+	
+	public static Phrase trill(MidiNote note, Key key) {
+		return trill(note, key, 1/4.0);
+	}
+	
+	public static Phrase trill(MidiNote note, Key key, double durationOfFourTrills) {
+		Phrase phrase = new Phrase();
+				
+		MidiPitch pitch = new MidiPitch(note.getPitch());
+		requirePitchInKey(pitch, key);
+		
+		MidiPitch upperPitch = key.stepsAbove(1, pitch);
+		double durationOfTwoNotes = durationOfFourTrills / 4.0;
+		
+		double d = note.getDuration();
+		while (d > durationOfTwoNotes) {
+			phrase.add(new MidiNote(pitch, durationOfTwoNotes / 2.0));
+			phrase.add(new MidiNote(upperPitch, durationOfTwoNotes / 2.0));
+			d -= durationOfTwoNotes;
+		}
+		phrase.add(new MidiNote(pitch, d)); // artistic choice. unsure how to resolve in the remaining time
+		
+		return phrase;
+	}
 	
 	public static Phrase upperMordent(MidiNote note, Key key) {
 		return upperMordent(note, key, note.getDuration()/2.0);
@@ -33,7 +57,7 @@ public class Ornament {
 		MidiPitch pitch = new MidiPitch(note.getPitch());
 		requirePitchInKey(pitch, key);
 		
-		MidiPitch upperPitch = key.stepsAbove(1, pitch); // FIXME
+		MidiPitch upperPitch = key.stepsAbove(1, pitch);
 		
 		phrase.add(new MidiNote(note.getPitch(), mordentDuration/2.0));
 		phrase.add(new MidiNote(upperPitch, mordentDuration/2.0));
@@ -54,7 +78,7 @@ public class Ornament {
 		MidiPitch pitch = new MidiPitch(note.getPitch());
 		requirePitchInKey(pitch, key);
 		
-		MidiPitch lowerPitch = key.stepsAbove(-1, pitch); // FIXME
+		MidiPitch lowerPitch = key.stepsAbove(-1, pitch);
 		
 		phrase.add(new MidiNote(note.getPitch(), mordentDuration/2.0));
 		phrase.add(new MidiNote(lowerPitch, mordentDuration/2.0));
@@ -64,7 +88,7 @@ public class Ornament {
 	}
 	
 	public static Phrase turn(MidiNote note, Key key) {
-		return turn(note, key, note.getDuration() / 2.0); // FIXME
+		return turn(note, key, note.getDuration() / 2.0);
 	}
 	
 	public static Phrase turn(MidiNote note, Key key, double turnDuration) {
@@ -110,7 +134,7 @@ public class Ornament {
 		MidiPitch pitch = new MidiPitch(note.getPitch());
 		requirePitchInKey(pitch, key);
 		
-		MidiPitch appoPitch = key.stepsAbove(1, pitch); // FIXME
+		MidiPitch appoPitch = key.stepsAbove(1, pitch);
 		
 		phrase.add(new MidiNote(appoPitch, appoDuration));
 		phrase.add(new MidiNote(note.getPitch(), note.getDuration() - appoDuration));
