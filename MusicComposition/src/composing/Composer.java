@@ -23,10 +23,11 @@ public class Composer {
 	private ComposerThread thread;
 	private List<Composition> works = new ArrayList<>();
 	private Queue<ComposingStrategy> requests = new ArrayDeque<>();
+	private int wrapUpRequests; // TODO honor wrapup requests in some way
 	
 	private List<ComposingStrategy> oldTricks = Arrays.asList(new ComposingStrategy[] { 
 					new TwelveBarImprovStrategy(new Note(Letter.C)),
-					new PrettyProgressionStrategy(new Key(new Note(Letter.B, Accidental.FLAT), Key.MAJOR)),
+					new PrettyProgressionStrategy(new Key(new Note(Letter.A, Accidental.FLAT), Key.MAJOR)),
 			});
 	
 	/**
@@ -86,6 +87,9 @@ public class Composer {
 					} while (nextStrategy.equals(strategy));
 				}
 				return beginComposing(nextStrategy);
+			case WRAP_UP:
+				wrapUpRequests++;
+				break;
 			default:
 				break;
 		}
@@ -103,10 +107,23 @@ public class Composer {
 	}
 	
 	private enum UserInput {
+
+		/** restart the current piece */
 		RESTART(startsWithAny("restart", "reset")),
+
+		/** 
+		 * add a piece to the end of the future-requests queue <p>
+		 * <code>restart [piece-name-substring]</code>
+		 **/
 		REQUEST(startsWithAny("request"), 
 				string -> Arrays.asList(string.substring("request".length()).trim())),
+
+		/** immediately switch pieces */
 		SWITCH(startsWithAny("switch")),
+
+		/** bring the piece to a close in a natural time */
+		WRAP_UP(startsWithAny("wrap"))
+
 		;
 		
 		private Predicate<String> test;
