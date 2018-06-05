@@ -4,6 +4,7 @@ import static composing.RandomUtil.*;
 import static composing.writer.Ornament.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -13,8 +14,6 @@ import theory.Measure;
 import theory.MidiNote;
 import theory.MidiPitch;
 import theory.Note;
-import theory.Scale;
-import theory.ScaleImpl;
 import theory.analysis.Phrase;
 
 public class PrettyMelodyWriter implements MelodyWriter {
@@ -32,18 +31,26 @@ public class PrettyMelodyWriter implements MelodyWriter {
 				.collect(Collectors.toSet());
 		Key key = Key.inferKey(allPitchesInAllMeasures);
 		
-		int ornamentChance = 40;
-		int appoggiaturaChance = 65; // = (ornamentChance * XX)% 
+		Optional<Integer> highest = allPitchesInAllMeasures.stream().map(MidiPitch::get).reduce((a,b) -> a < b ? b : a);
+		
+		int ornamentChance = 35;
+		int appoggiaturaChance = 70; // = (ornamentChance * XX)% 
 		int mordentChance = 90; // = (ornamentChance * (100-appoggiaturaChance) * XX)%
 //		int trillChance = 70; // = (ornamentChance * (100-appoggiaturaChance) * (100-mordentChance) * XX)%
 //		int turnChance = 100; // = (ornamentChance * (100-appoggiaturaChance) * (100-mordentChance) * (100-trillChance))%
 		
 		for (Measure measure : measures) {
 			Phrase measurePhrase = new Phrase();
+			boolean risingMelody = roll(50);
 			Note startingNote = key.note(random(key.getScale().intervals().length) + 1);
-			MidiPitch startingPitch = new MidiPitch(startingNote, 4);
+			MidiPitch startingPitch = new MidiPitch(startingNote, 1);
+			int halfStepsBelowHighest = risingMelody ? 5 : 0;
+			while (startingPitch.get() < highest.get() - halfStepsBelowHighest)
+				startingPitch = startingPitch.above(12);
+			
 			for (int i=0; i<measure.beats(); i++) {
-				MidiNote midiNote = new MidiNote(key.stepsAbove(i, startingPitch), measure.beatValue());
+				int steps = risingMelody ? i : -i;
+				MidiNote midiNote = new MidiNote(key.stepsAbove(steps, startingPitch), measure.beatValue());
 				midiNote.setDynamic(Dynamic.MEZZO_PIANO);
 				// FIXME I suspect something is wrong with the pitches chosen while writing...
 				// the pitches skip around and takes the wrong shape

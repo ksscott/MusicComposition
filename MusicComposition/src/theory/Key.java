@@ -1,13 +1,20 @@
 package theory;
 
-import static composing.RandomUtil.*;
-import static theory.Mode.*;
+import static composing.RandomUtil.modPos;
+import static theory.Mode.AEOLIAN;
+import static theory.Mode.IONIAN;
+import static theory.Mode.LOCRIAN;
+import static theory.Mode.LYDIAN;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import theory.ChordSpec.Quality;
 
 public class Key {
 	
@@ -210,6 +217,55 @@ public class Key {
 			key = new Key(tonicWhyNot, scaleSureOk);
 		}
 		return key;
+	}
+	
+	public static Quality chordQuality(Chord chord) {
+		List<MidiPitch> pitches = chord.get();
+		if (pitches.size() != 3)
+			throw new IllegalArgumentException("Only chords with three pitches currently supported.");
+		
+		int min = 12; // store the least greatest interval
+		List<Integer> intervals = new ArrayList<>();
+		for (MidiPitch pitch : pitches) {
+			int max = 0;
+			List<Integer> candidateIntervals = new ArrayList<>();
+			for (MidiPitch other : pitches) {
+				int halfStepsTo = modPos(pitch.halfStepsTo(other), 12);
+				candidateIntervals.add(halfStepsTo);
+				max = halfStepsTo > max ? halfStepsTo : max;
+			}
+			if (max < min) {
+				min = max;
+				intervals = candidateIntervals;
+			}
+		}
+		Collections.sort(intervals);
+		if (!(intervals.get(0) == 0))
+			throw new IllegalStateException("what?");
+		
+		Quality quality = null;
+		int third = intervals.get(1);
+		int fifth = intervals.get(2);
+		if (third == 3) {
+			if (fifth == 6) {
+				quality = Quality.DIMINISHED;
+			} else if (fifth == 7) {
+				quality = Quality.MINOR;
+			} else {
+				throw new IllegalArgumentException("Given chord did not map to a Quality.");
+			}
+		} else if (third == 4) {
+			if (fifth == 7) {
+				quality = Quality.MAJOR;
+			} else if (fifth == 8) {
+				quality = Quality.AUGMENTED;
+			} else {
+				throw new IllegalArgumentException("Given chord did not map to a Quality.");
+			}
+		} else {
+			throw new IllegalArgumentException("Given chord did not map to a Quality.");
+		}
+		return quality;
 	}
 	
 	// unsure if this is the best method signature

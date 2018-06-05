@@ -1,9 +1,9 @@
 package theory;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Chord {
 	
@@ -21,11 +21,12 @@ public class Chord {
 	
 	public Chord(Chord other) {
 		this();
-		this.pitches.addAll(other.get());
+		this.pitches.addAll(other.pitches);
 	}
 	
+	/** @return sorted list of pitches in this chord */
 	public List<MidiPitch> get() {
-		return new ArrayList<>(pitches);
+		return pitches.stream().sorted().collect(Collectors.toList());
 	}
 	
 	public void add(MidiPitch pitch) {
@@ -36,4 +37,7 @@ public class Chord {
 		pitches.remove(pitch);
 	}
 	
+	public boolean isEmpty() {
+		return pitches.isEmpty();
+	}
 }

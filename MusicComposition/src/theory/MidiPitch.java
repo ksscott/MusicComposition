@@ -16,10 +16,18 @@ public class MidiPitch implements Comparable<MidiPitch> {
 		return pitch;
 	}
 	
+	/**
+	 * @param halfSteps number of half steps above this pitch
+	 * @return a MidiPitch that is the given number of half steps above this pitch
+	 */
 	public MidiPitch above(int halfSteps) {
 		return new MidiPitch(pitch + halfSteps);
 	}
 	
+	/**
+	 * @param halfSteps number of half steps below this pitch
+	 * @return a MidiPitch that is the given number of half steps below this pitch
+	 */
 	public MidiPitch below(int halfSteps) {
 		return new MidiPitch(pitch - halfSteps);
 	}
@@ -30,6 +38,19 @@ public class MidiPitch implements Comparable<MidiPitch> {
 	 */
 	public int halfStepsTo(MidiPitch other) {
 		return other.pitch - this.pitch;
+	}
+	
+	/**
+	 * In the event of a tritone, returns a tritone above this pitch
+	 * 
+	 * @param note to search for
+	 * @return the nearest instance of the given note to this pitch
+	 */
+	public MidiPitch nearest(Note note) {
+		int halfStepsTo = Key.toFlatNote(this).halfStepsTo(note);
+		if (halfStepsTo >= 6)
+			halfStepsTo -= 12;
+		return above(halfStepsTo);
 	}
 	
 	public static int inOctave(Note note, int octave) {

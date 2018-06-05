@@ -40,16 +40,16 @@ public class ChordBuilder {
 		
 		for (ChordNote chordNote : noteMask) {
 			int halfStepsAboveRoot = 0;
-			int steps = chordNote.scaleDegree;
+			int stepsAboveRoot = chordNote.scaleDegree - 1;
 			int octavesAbove = 0;
-			while (steps >= degrees) {
+			while (stepsAboveRoot > degrees) {
 				// cut off whole octaves
-				steps -= degrees;
+				stepsAboveRoot -= degrees;
 				octavesAbove++;
 			}
 			
 			halfStepsAboveRoot += octavesAbove*scaleSize;
-			halfStepsAboveRoot += intervalsFromRoot[steps];
+			halfStepsAboveRoot += intervalsFromRoot[stepsAboveRoot];
 			halfStepsAboveRoot += chordNote.accidental.pitchAdjustment();
 			chord.add(rootPitch.above(halfStepsAboveRoot));
 		}
@@ -59,6 +59,7 @@ public class ChordBuilder {
 	
 	public ChordBuilder setRoot(Note root) {
 		this.root = root;
+//		System.out.println("Builder root set to: " + MidiPitch.inOctave(this.root, octave));
 		return this;
 	}
 	
@@ -83,7 +84,7 @@ public class ChordBuilder {
 		return addPitch(scaleDegree, Accidental.NONE);
 	}
 	
-	public ChordBuilder addPitch(int scaleDegree, Accidental adjustment) {
+	public ChordBuilder addPitch(int scaleDegree, Accidental adjustment) { // consider changing Accidental to some other concept
 		noteMask.add(new ChordNote(scaleDegree, adjustment)); // set add prohibits duplicates
 		return this;
 	}
@@ -98,6 +99,29 @@ public class ChordBuilder {
 		noteMask.remove(new ChordNote(scaleDegree, Accidental.NONE));
 		noteMask.remove(new ChordNote(scaleDegree, Accidental.SHARP));
 		return this;
+	}
+	
+	public ChordBuilder invert() {
+		return invert(1);
+	}
+	
+	public ChordBuilder invert(int inversions) {
+		for (int i=0; i<inversions; i++) {
+			ChordNote lowestNote = noteMask.stream().sorted().findFirst().orElse(new ChordNote(1, Accidental.NONE));
+			removePitch(lowestNote.scaleDegree, lowestNote.accidental);
+			addPitch(lowestNote.scaleDegree+7, lowestNote.accidental);
+		}
+		return this;
+	}
+	
+	public ChordBuilder uninvert() {
+		return uninvert(1);
+	}
+	
+	public ChordBuilder uninvert(int uninversions) {
+		// TODO
+		throw new RuntimeException("Unimplemented");
+//		return this;
 	}
 	
 	private static class ChordNote {
