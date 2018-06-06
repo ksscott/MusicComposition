@@ -4,6 +4,7 @@ import static composing.RandomUtil.*;
 import static composing.writer.Ornament.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -52,30 +53,36 @@ public class PrettyMelodyWriter implements MelodyWriter {
 				int steps = risingMelody ? i : -i;
 				MidiNote midiNote = new MidiNote(key.stepsAbove(steps, startingPitch), measure.beatValue());
 				midiNote.setDynamic(Dynamic.MEZZO_PIANO);
-				// FIXME I suspect something is wrong with the pitches chosen while writing...
-				// the pitches skip around and takes the wrong shape
-				// and this happened:
-				// Notes at time 0.00: 55 58 62 70 69 
-				// Notes at time 0.13: 69 
-				// Notes at time 0.25: 55 58 62 70 
+				measure.setMetaInfo(measure.getMetaInfo() + " " + midiNote.getPitch());
 				if (roll(ornamentChance)) {
-					if (roll(appoggiaturaChance))
+					if (roll(appoggiaturaChance)) {
 						measurePhrase.add(appoggiatura(midiNote, key));
+						measure.setMetaInfo(measure.getMetaInfo() + "ap");
+					}
 					else if (roll(mordentChance)) {
 						if (roll(50))
 							measurePhrase.add(lowerMordent(midiNote, key));
 						else
 							measurePhrase.add(upperMordent(midiNote, key));
-					} else if (i==measure.beats()){
+						measure.setMetaInfo(measure.getMetaInfo() + "md");
+					} else if (i==measure.beats()-1){
 						measurePhrase.add(trill(midiNote, key));
+						measure.setMetaInfo(measure.getMetaInfo() + "tr");
 					} else {
-						measurePhrase.add(turn(midiNote, key));
+//						measurePhrase.add(turn(midiNote, key)); // removing turns for now
+//						measure.setMetaInfo(measure.getMetaInfo() + "tn");
+						measurePhrase.add(midiNote);
+						measure.setMetaInfo(measure.getMetaInfo() + "__");
 					}
 				} else {
 					measurePhrase.add(midiNote);
+					measure.setMetaInfo(measure.getMetaInfo() + "__");
 				}
 			}
 			phrase.add(measurePhrase);
+			
+//			measure.setMetaInfo(measure.getMetaInfo() + " " + measurePhrase.timesAndNotes());
+			
 		}
 //		System.out.println("Wrote a melody of length " + phrase.length() + " onto measures of length " 
 //				+ measures.stream().map(Measure::length).reduce((a,b) -> a+b).orElse(0.0));
