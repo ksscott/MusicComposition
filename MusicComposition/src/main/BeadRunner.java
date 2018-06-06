@@ -25,7 +25,7 @@ public class BeadRunner {
 	
 	private static Queue<String> userInputs = new PriorityQueue<>();
 	private static boolean empty = true;
-	private static final List<String> STOP_COMMANDS = Arrays.asList(new String[] { "stop", "end" });
+	private static final List<String> STOP_COMMANDS = Arrays.asList(new String[] { "stop", "end", "quit", "kill" });
 
 	public static void main(String[] args) {
 		InputThread inputThread = new InputThread();
@@ -66,6 +66,7 @@ public class BeadRunner {
 								inputThread.end();
 								composer.finishComposing();
 								c.kill();
+								ac.stop();
 							}
 							Measure onTheFlyMeasure = composer.receiveInput(input);
 							if (onTheFlyMeasure != null)
@@ -87,7 +88,7 @@ public class BeadRunner {
 								measure = measures.poll(); // TODO maybe use multiple threads to make this smoother
 								int millisPerSec = (int) (60000 / measure.getBpm());
 								c.getIntervalUGen().setValue(millisPerSec);
-								System.out.println("Measure: " + measure.getMeasureNumber() + " " + measure.getMetaInfo());
+								System.out.println("[Measure " + measure.getMeasureNumber() + "] " + measure.getMetaInfo());
 								startOfMeasure = beat;
 							}
 //							System.out.println("Time: " + time);
