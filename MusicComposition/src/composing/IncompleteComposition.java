@@ -30,11 +30,11 @@ public class IncompleteComposition extends Composition {
 	 * 
 	 * @return the actual object instance of this Composition's incomplete measures
 	 */
-	public Queue<Measure> getFuture() {
+	public synchronized Queue<Measure> getFuture() {
 		return future;
 	}
 
-	public Measure writeNextMeasure() {
+	public synchronized Measure writeNextMeasure() {
 		final Measure measure = future.poll();
 		if (measure == null)
 			return new Measure(4, 1/4.0);
