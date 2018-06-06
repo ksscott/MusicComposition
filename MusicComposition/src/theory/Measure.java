@@ -123,32 +123,61 @@ public class Measure {
 		setMetaInfo(metaInfo + "\n" + other.getMetaInfo());
 	}
 	
-	public static void writeOnto(Phrase phrase, List<Measure> measures, double offset) {
+	public String timesAndNotes() {
+		String measureString = "";
+		Map<Double, List<MidiNote>> measureNotes = notes;
+		List<Double> times = new ArrayList<>(measureNotes.keySet());
+		Collections.sort(times);
+		for (Double time : times) {
+			measureString += String.format("(%.2f,", time);
+			List<MidiNote> list = measureNotes.get(time);
+			for (MidiNote measureNote : list) {
+				measureString += measureNote.getPitch() + ",";
+			}
+			measureString = measureString.substring(0, measureString.length() - 1);
+			measureString += ") ";
+		}
+		return measureString;
+	}
+	
+	public static void writeOnto(Phrase phrase, List<Measure> measures, double offset) { // FIXME honor the offset
 		if (offset + phrase.getStart() < 0)
 			throw new IllegalArgumentException("Phrase would start before start of measures.");
 		Optional<Double> totalLength = measures.stream().map(Measure::length).reduce((a, b) -> a+b);
 		if (!totalLength.isPresent() || totalLength.get() < offset + phrase.getEnd())
 			throw new IllegalArgumentException("Given measures are too short to accommodate the given phrase.");
 		
+//		System.out.println("Writing a Phrase: " + phrase.timesAndNotes());
+		
 		int measureIndex = 0;
+		Measure measure = measures.get(measureIndex);
 		Double ticker = 0.0; // slide the ticker to the start of each measure
 		Map<Double, List<MidiNote>> phraseNotes = phrase.getNotes();
-		List<Double> keySet = new ArrayList<>(phraseNotes.keySet());
-		Collections.sort(keySet);
+		List<Double> times = new ArrayList<>(phraseNotes.keySet());
+		Collections.sort(times);
 		
-		for (Double time : keySet) {
-			Measure measure = measures.get(measureIndex);
+//		System.out.println("Written Measures: ");
+		for (Double time : times) {
 			while (time >= ticker + measure.length()) {
-				measure = measures.get(measureIndex++);
+//				System.out.println("metainfo " + measure.getMetaInfo());
+//				System.out.println("Measure " + measure.timesAndNotes());
+				
 				ticker += measure.length();
+				measure = measures.get(++measureIndex);
 			}
 			double location = time - ticker;
+			List<MidiNote> notes = phraseNotes.get(time);
+//			if (notes.size() > 1)
+//				throw new IllegalStateException("bug!");
+			for (MidiNote note : notes) {
+				measure.add(note, location);
+//				if (location == 0)
+//					System.out.println("downbeat" + note.getPitch() + " ");
+			}
 //			System.out.println("Writing, time/ticker/location/measureIndex " 
 //					+ time + "/" + ticker + "/" + location + "/" + measureIndex);
-			List<MidiNote> notes = phraseNotes.get(time);
-			for (MidiNote note : notes)
-				measure.add(note, location);
 		}
+//		System.out.println();
 	}
 
 	private double latestNoteEnd() {
