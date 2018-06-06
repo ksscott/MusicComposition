@@ -1,6 +1,7 @@
 package theory.analysis;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +91,23 @@ public class Phrase {
 			phrase.notes.put(time*timeRatio, list);
 		}
 		return phrase;
+	}
+	
+	public String timesAndNotes() {
+		String phraseString = "";
+		Map<Double, List<MidiNote>> phraseNotes = getNotes();
+		ArrayList<Double> times = new ArrayList<>(phraseNotes.keySet());
+		Collections.sort(times);
+		for (Double time : times) {
+			phraseString += String.format("(%.2f,", time);
+			List<MidiNote> list = phraseNotes.get(time);
+			for (MidiNote phraseNote : list) {
+				phraseString += phraseNote.getPitch() + ",";
+			}
+			phraseString = phraseString.substring(0, phraseString.length() - 1);
+			phraseString += ") ";
+		}
+		return phraseString;
 	}
 	
 }
