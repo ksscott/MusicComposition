@@ -1,10 +1,13 @@
 package composing.writer;
 
-import static composing.RandomUtil.*;
-import static composing.writer.Ornament.*;
+import static composing.RandomUtil.random;
+import static composing.RandomUtil.roll;
+import static composing.writer.Ornament.appoggiatura;
+import static composing.writer.Ornament.lowerMordent;
+import static composing.writer.Ornament.trill;
+import static composing.writer.Ornament.upperMordent;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;

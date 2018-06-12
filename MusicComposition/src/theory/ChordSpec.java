@@ -107,6 +107,49 @@ public class ChordSpec {
 		return name;
 	}
 	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (add2 ? 1231 : 1237);
+		result = prime * result + (add4 ? 1231 : 1237);
+		result = prime * result + (add6 ? 1231 : 1237);
+		result = prime * result + ((degree == null) ? 0 : degree.hashCode());
+		result = prime * result + inversion;
+		result = prime * result + ((quality == null) ? 0 : quality.hashCode());
+		result = prime * result + ((tonic == null) ? 0 : tonic.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ChordSpec other = (ChordSpec) obj;
+		if (add2 != other.add2)
+			return false;
+		if (add4 != other.add4)
+			return false;
+		if (add6 != other.add6)
+			return false;
+		if (degree != other.degree)
+			return false;
+		if (inversion != other.inversion)
+			return false;
+		if (quality != other.quality)
+			return false;
+		if (tonic == null) {
+			if (other.tonic != null)
+				return false;
+		} else if (!tonic.equals(other.tonic))
+			return false;
+		return true;
+	}
+
 	public enum Quality {
 		
 		AUGMENTED("+"), MAJOR("M"), MINOR("m"), DIMINISHED("°");

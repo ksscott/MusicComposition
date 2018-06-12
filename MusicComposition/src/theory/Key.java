@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 import theory.ChordSpec.Quality;
 
-public class Key {
+public class Key implements Cloneable {
 	
 	public static final Scale MAJOR = IONIAN;
 	public static final Scale MINOR = AEOLIAN;
@@ -62,12 +62,21 @@ public class Key {
 	 */
 	public int scaleDegree(MidiPitch pitch) {
 		MidiPitch tonicPitch = new MidiPitch(tonic, 1);
-		int halfStepsAboveTonic = tonicPitch.halfStepsTo(pitch) % scale.getWidth();
+		int halfStepsAboveTonic = modPos(tonicPitch.halfStepsTo(pitch), scale.getWidth());
 		int[] intervals = scale.intervalsFromRoot();
 		for (int i=0; i<intervals.length; i++)
 			if (intervals[i] == halfStepsAboveTonic)
 				return i+1;
-		throw new IllegalArgumentException("The given pitch was not contained in this key.");
+		throw new IllegalArgumentException("The given pitch was not contained in this key: "+ pitch);
+	}
+	
+	public int scaleDegree(Note note) {
+		int halfStepsAboveTonic = tonic.halfStepsTo(note);
+		int[] intervals = scale.intervalsFromRoot();
+		for (int i=0; i<intervals.length; i++)
+			if (intervals[i] == halfStepsAboveTonic)
+				return i+1;
+		throw new IllegalArgumentException("The given note was not contained in this key: "+ note);
 	}
 	
 	/**
@@ -294,6 +303,10 @@ public class Key {
 		return chord;
 	}
 	
+	public ChordSpec chordSpec(int scaleDegree, int octave) {
+		return new ChordSpec(note(scaleDegree), chordQuality(chord(scaleDegree, octave)));
+	}
+	
 	public Key relativeKey() {
 		if (scale == MAJOR)
 			return new Key(tonic.halfStepsAbove(-3), MINOR);
@@ -314,6 +327,11 @@ public class Key {
 		if (!scale.isDiatonic())
 			throw new UnsupportedOperationException("Operation currently only supported for diatonic scales");
 		return new Key(note(scaleDegree), Mode.equivalent(scale).revolve(scaleDegree));
+	}
+	
+	@Override
+	public Key clone() {
+		return new Key(tonic.clone(), new ScaleImpl(scale));
 	}
 	
 	@Override

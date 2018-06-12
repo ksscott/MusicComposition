@@ -48,7 +48,7 @@ public class MidiPitch implements Comparable<MidiPitch> {
 	 */
 	public MidiPitch nearest(Note note) {
 		int halfStepsTo = Key.toFlatNote(this).halfStepsTo(note);
-		if (halfStepsTo >= 6)
+		if (halfStepsTo > 6)
 			halfStepsTo -= 12;
 		return above(halfStepsTo);
 	}

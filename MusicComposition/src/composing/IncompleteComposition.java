@@ -1,6 +1,8 @@
 package composing;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 import theory.Measure;
@@ -23,6 +25,37 @@ public class IncompleteComposition extends Composition {
 			this.future = ((IncompleteComposition) other).future;
 		else
 			this.future = new LinkedList<>();
+	}
+	
+	@Override
+	public synchronized Measure getMeasure(int measureNumber) {
+		if (measureNumber <= measures.size())
+			return super.getMeasure(measureNumber);
+		if (measureNumber > measures.size() + future.size())
+			throw new IllegalArgumentException("Have not yet written measure " + measureNumber);
+		return new ArrayList<>(future).get(measureNumber - measures.size() - 1);
+	}
+	
+	@Override
+	public synchronized List<Measure> getMeasures(int firstMeasureNumber, int lastMeasureNumber) {
+		if (lastMeasureNumber <= measures.size())
+			return super.getMeasures(firstMeasureNumber, lastMeasureNumber);
+		if (lastMeasureNumber < firstMeasureNumber)
+			throw new IllegalArgumentException("Please don't do that.");
+		if (firstMeasureNumber < 1 || lastMeasureNumber > measures.size() + future.size())
+			throw new IllegalArgumentException("Requested range of measures outside this composition's size.");
+		if (firstMeasureNumber > measures.size())
+			return new ArrayList<>(future).subList(
+					firstMeasureNumber - measures.size() - 1, lastMeasureNumber - measures.size());
+		List<Measure> retval = new ArrayList<>();
+		retval.addAll(measures.subList(firstMeasureNumber - 1, measures.size()));
+		retval.addAll(new ArrayList<>(future).subList(0, lastMeasureNumber));
+		return retval;	
+	}
+	
+	@Override
+	public synchronized int size() {
+		return measures.size() + future.size();
 	}
 	
 	/**

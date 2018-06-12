@@ -1,11 +1,12 @@
 package theory;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class Chord {
+public class Chord implements Iterable<MidiPitch> {
 	
 	private Set<MidiPitch> pitches;
 	
@@ -39,5 +40,10 @@ public class Chord {
 	
 	public boolean isEmpty() {
 		return pitches.isEmpty();
+	}
+
+	@Override
+	public Iterator<MidiPitch> iterator() {
+		return get().iterator();
 	}
 }
