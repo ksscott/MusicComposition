@@ -8,6 +8,10 @@ import java.util.Queue;
 import theory.Measure;
 import theory.analysis.Analysis;
 
+/**
+ * @author kennethscott
+ *
+ */
 public class IncompleteComposition extends Composition {
 
 	private Queue<Measure> future;
@@ -59,6 +63,8 @@ public class IncompleteComposition extends Composition {
 	}
 	
 	/**
+	 * The measures of this composition that have yet to be finalized. They can be modified in any way.
+	 * <p>
 	 * Intended to allow consumers to directly edit the incomplete portion of this Composition
 	 * 
 	 * @return the actual object instance of this Composition's incomplete measures

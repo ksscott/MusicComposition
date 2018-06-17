@@ -3,7 +3,6 @@ package composing.strategy;
 import static composing.RandomUtil.roll;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
@@ -67,7 +66,8 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 				// leave nextKey null to not change keys again
 			} else {
 				lastKey = lastSectionKeys.iterator().next();
-				if (lastSection.getKeys(lastSection.size()-1).size() == 1) {
+				Section secondLastSection = sections.get(sections.size()-2);
+				if (secondLastSection.getKeys(secondLastSection.size()-1).size() == 1) {
 					// presume same as lastKey
 					// after two sections in this key, let's change keys
 					if (lastKey.equals(key)) {
@@ -83,15 +83,16 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 			Section nextSection = new Section(8);
 			if (nextKey != null) {
 				// change keys from lastKey to nextKey
-				
-			} else {
-				// compose section in lastKey
 				KeyChordProgression lastKeyProgression = 
 						ChordProgressions.standardMajorProgression(lastKey.getTonic());
 				KeyChordProgression nextKeyProgression = 
 						ChordProgressions.standardMajorProgression(nextKey.getTonic());
 				KeyChange keyChange = new KeyChange(lastKeyProgression, nextKeyProgression);
-				keyChange.progress(1, 1, 8);
+				List<ChordSpec> chordSpecs = keyChange.progress(1, 1, 8);
+				
+			} else {
+				// compose section in lastKey
+				
 			}
 			analysis.addSection(nextSection);
 			// TODO
@@ -126,31 +127,31 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 	protected Measure composeBar(IncompleteComposition composition) {
 		List<Measure> measures = composition.getMeasures();
 		int currentChordDegree = 1;
-		Chord previousChord = key.chord(currentChordDegree, octave);
+		Chord previousChord = key.chord(currentChordDegree, octave); // for first measure only
 //		System.out.println("Previous chord pitches: ");
 //		for (MidiPitch pitch : previousChord.get())
 //			System.out.println(pitch);
 		if (!measures.isEmpty()) {
 			if (!composition.getFuture().isEmpty())
 				measures = new ArrayList<Measure>(composition.getFuture());
-			String metaInfo = measures.get(measures.size()-1).getMetaInfo();
+			Measure lastMeasure = measures.get(measures.size() - 1);
+			String metaInfo = lastMeasure.getMetaInfo();
 			Matcher matcher = Pattern.compile("(\\()"+"([0-9])"+"(\\))"+"(.*)").matcher(metaInfo);
 			matcher.matches(); // I don't understand this API, apparently
 			int previousChordDegree = Integer.valueOf(matcher.group(2));
-			
 			currentChordDegree = key.scaleDegree(progression.getNext(previousChordDegree).getTonic());
+			
 			
 			// FIXME must find a much better way than this to get the last chord
 			// probably by abstracting a high-level Measure class and also adding multiple voices
-			Measure meas = measures.get(measures.size() - 1);
 //			System.out.println("Last measure empty? " + meas.isEmpty());
-			List<MidiNote> notes = meas.getNotes(meas.beatValue()*(meas.beats()-1));
+			List<MidiNote> lastBeatNotes = lastMeasure.getNotes(lastMeasure.beatValue()*(lastMeasure.beats()-1));
 //			System.out.println("Last beat notes size: " + notes.size());
 //			System.out.println("Last beat notes: ");
 //			for (MidiNote note : notes)
 //				System.out.println(note);
 			previousChord = new Chord();
-			for (MidiNote note : notes) {
+			for (MidiNote note : lastBeatNotes) {
 				previousChord.add(new MidiPitch(note.getPitch()));
 			}
 		}
@@ -169,14 +170,11 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 //		for (MidiPitch pitch : previousChord.get())
 //			System.out.println(pitch);
 		
-		int beats = 4;
-		double beatValue = 1/4.0;
-		Measure measure = new Measure(beats, beatValue);
+		Measure measure = new Measure(4, 1/4.0);
 		
-		List<MidiPitch> previousPitches = previousChord.get();
-		Chord previousChordHacked = new Chord();
+		Chord previousChordHacked = new Chord(); // gross hack, awaiting "instrument" parts
 		for (int i=0; i<3; i++)
-			previousChordHacked.add(previousPitches.get(i));
+			previousChordHacked.add(previousChord.get().get(i));
 		//		System.out.println("scaleDegree: " + scaleDegree);
 //		System.out.println("Tonic: " + MidiPitch.inOctave(key.getTonic(), 4));
 //		ChordSpec nextChordSpec = key.chordSpec(scaleDegree, octave); // FIXME not necessarily the tonic
@@ -186,15 +184,14 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		
 //		List<MidiPitch> pitches = key.chord(scaleDegree, octave).get();
 		List<MidiPitch> pitches = voiceLeadChord.get();
-		Collections.sort(pitches);
 		
-		for (int i=0; i<beats; i++) {
+		for (int i=0; i<measure.beats(); i++) {
 			for (MidiPitch pitch : pitches) {
 //				System.out.println("Adding pitch: " + pitch);
-				MidiNote note = new MidiNote(pitch, beatValue);
+				MidiNote note = new MidiNote(pitch, measure.beatValue());
 				if (i != 0)
 					note.setDynamic(Dynamic.MEZZO_PIANO);
-				measure.add(note, i*beatValue);
+				measure.add(note, i*measure.beatValue());
 			}
 		}
 		

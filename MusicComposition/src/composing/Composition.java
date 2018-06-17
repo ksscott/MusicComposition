@@ -17,10 +17,15 @@ public class Composition {
 		this.measures = other.measures;
 	}
 	
+	/** @return A list of measures written into this piece. */
 	public List<Measure> getMeasures() {
 		return new ArrayList<>(measures);
 	}
 	
+	/**
+	 * @param measureNumber natural-numbered measure number
+	 * @return the measure of the given number
+	 */
 	public Measure getMeasure(int measureNumber) {
 		if (measureNumber <= 0)
 			throw new IllegalArgumentException("Only natural numbered measures can be returned.");
@@ -43,10 +48,18 @@ public class Composition {
 		return measures.subList(firstMeasureNumber-1, lastMeasureNumber);
 	}
 
+	/**
+	 * @return this composition's size in measures
+	 */
 	public int size() {
 		return measures.size();
 	}
 	
+	/**
+	 * Writes a measure to the end of this composition and automatically numbers it
+	 * 
+	 * @param measure the measure to be written
+	 */
 	public void addMeasure(Measure measure) {
 		measures.add(measure);
 		measure.setMeasureNumber(measures.size());

@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import theory.ChordProgressions.ChordProgression.ProgressionNode;
-import theory.ChordSpec.Quality;
 
 /**
  * Simplistic graph of chords and their possible successors
