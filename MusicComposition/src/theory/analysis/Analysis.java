@@ -47,6 +47,7 @@ public class Analysis {
 		private Section section;
 		
 		private PieceSection(int startingMeasureNumber, Section mapped) {
+			this.start = startingMeasureNumber;
 			this.section = mapped;
 		}
 		
