@@ -10,8 +10,8 @@ import theory.Key;
 
 public class Section {
 
-	private int measures;
-	private Map<Integer,Set<Key>> keys;
+	protected int measures;
+	protected Map<Integer,Set<Key>> keys;
 	
 	public Section(int measures) {
 		this.measures = measures;
@@ -30,6 +30,10 @@ public class Section {
 		return keys.values().stream().flatMap(Set::stream).collect(Collectors.toSet());
 	}
 	
+	/**
+	 * @param measureNumber one-indexed
+	 * @param key to associate with the given measure
+	 */
 	public void putKey(int measureNumber, Key key) {
 		if (measureNumber < 1 || measureNumber > measures)
 			throw new IllegalArgumentException("Cannot add key outside this section.");

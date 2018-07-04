@@ -1,5 +1,7 @@
 package theory;
 
+import java.util.Arrays;
+
 public class ScaleImpl implements Scale {
 
 	protected String name;
@@ -40,6 +42,28 @@ public class ScaleImpl implements Scale {
 			name = "[" + name.trim() + "]";
 		}
 		return name;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Arrays.hashCode(intervals);
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ScaleImpl other = (ScaleImpl) obj;
+		if (!Arrays.equals(intervals, other.intervals))
+			return false;
+		return true;
 	}
 
 }

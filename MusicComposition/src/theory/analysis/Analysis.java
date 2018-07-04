@@ -32,11 +32,11 @@ public class Analysis {
 		sections.add(new PieceSection(firstMeasureNumber, section));
 	}
 	
-	int firstStartOfSection() {
+	public int firstStartOfSection() {
 		return sections.stream().mapToInt(PieceSection::firstMeasureNumber).max().orElse(0);
 	}
 	
-	int lastEndOfSection() {
+	public int lastEndOfSection() {
 		return sections.stream().mapToInt(PieceSection::lastMeasureNumber).max().orElse(0);
 	}
 	

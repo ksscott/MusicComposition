@@ -26,11 +26,11 @@ public class Key implements Cloneable {
 	public static final Scale BLUES_SCALE			 = new ScaleImpl(new int[]{3,2,1,1,3,2},	"Blues");
 	
 	private Note tonic;
-	private Scale scale;
+	private ScaleImpl scale;
 	
 	public Key(Note tonic, Scale scale) {
 		this.tonic = tonic;
-		this.scale = scale;
+		this.scale = new ScaleImpl(scale);
 	}
 	
 	public Note getTonic() {
@@ -51,7 +51,7 @@ public class Key implements Cloneable {
 		for (int interval : scale.intervalsFromRoot())
 			if (interval == halfStepsAboveTonic)
 				return true;
-		System.out.println("scale doesn't contain note halfStepsAboveTonic: " + halfStepsAboveTonic);
+//		System.out.println("scale doesn't contain note halfStepsAboveTonic: " + halfStepsAboveTonic);
 		return false;
 	}
 	
@@ -337,6 +337,37 @@ public class Key implements Cloneable {
 	@Override
 	public String toString() {
 		return new MidiPitch(tonic, 1) + " " + scale;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((scale == null) ? 0 : scale.hashCode());
+		result = prime * result + ((tonic == null) ? 0 : tonic.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Key other = (Key) obj;
+		if (scale == null) {
+			if (other.scale != null)
+				return false;
+		} else if (!scale.equals(other.scale))
+			return false;
+		if (tonic == null) {
+			if (other.tonic != null)
+				return false;
+		} else if (!tonic.equals(other.tonic))
+			return false;
+		return true;
 	}
 	
 }

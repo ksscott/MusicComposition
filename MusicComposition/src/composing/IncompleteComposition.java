@@ -19,16 +19,24 @@ public class IncompleteComposition extends Composition {
 	
 	public IncompleteComposition() {
 		super();
-		this.future = new LinkedList<>();
-		this.analysis = new Analysis();
+		initFields();
 	}
 	
 	public IncompleteComposition(Composition other) {
 		super(other);
-		if (other instanceof IncompleteComposition)
+		if (other instanceof IncompleteComposition) {
+			// TODO deep copy?
 			this.future = ((IncompleteComposition) other).future;
-		else
-			this.future = new LinkedList<>();
+			this.analysis = ((IncompleteComposition) other).analysis;
+		}
+		else {
+			initFields();
+		}
+	}
+	
+	private void initFields() {
+		this.future = new LinkedList<>();
+		this.analysis = new Analysis();
 	}
 	
 	@Override

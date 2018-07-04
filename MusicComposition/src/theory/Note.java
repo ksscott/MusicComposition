@@ -69,4 +69,10 @@ public class Note implements Cloneable, Comparable<Note> {
 		return modPos(Key.MINOR.intervalsFromRoot()[letter.ordinal()] + accidental.pitchAdjustment(), 12);
 	}
 	
+	@Override
+	public String toString() {
+		// temporary:
+		return "Note" + index;
+	}
+	
 }

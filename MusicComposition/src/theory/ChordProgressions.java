@@ -122,7 +122,7 @@ public class ChordProgressions {
 			this.nodes = new HashSet<>();
 		}
 		
-		public ProgressionNode get(ChordSpec chord) {
+		protected ProgressionNode get(ChordSpec chord) {
 			for (ProgressionNode node : this) {
 				if (node.getChord().equals(chord))
 					return node;
@@ -235,6 +235,10 @@ public class ChordProgressions {
 			this.key = key;
 		}
 		
+		public Key getKey() {
+			return key.clone();
+		}
+		
 		public void put(int from, int to) {
 			put(key.chordSpec(from, oct), key.chordSpec(to, oct));
 		}
@@ -296,6 +300,15 @@ public class ChordProgressions {
 		}
 		
 		/**
+		 * @see #progress(int, int, int)
+		 * @param maxChords max number of chords to include, counting first and last
+		 * @return list of chords to play to change keys from tonic to tonic
+		 */
+		public List<ChordSpec> progress(int maxChords) {
+			return progress(1,1,maxChords);
+		}
+		
+		/**
 		 * @param fromChordDegree
 		 * @param toChordDegree
 		 * @param maxChords max number of chords to include, counting first and last
@@ -312,6 +325,29 @@ public class ChordProgressions {
 				throw new RuntimeException("No valid progression found to fulfill the given requirements.");
 			
 			return result.stream().map(ProgressionNode::getChord).collect(Collectors.toList());
+		}
+		
+		public Key getFromKey() {
+			return from.getKey();
+		}
+		
+		public Key getToKey() {
+			return to.getKey();
+		}
+		
+		public boolean isInFromKey(ChordSpec chord) {
+			KeyChangeProgressionNode node = (KeyChangeProgressionNode) get(chord);
+			return (node == null) ? false : (node.isInFromKey());
+		}
+		
+		public boolean isInToKey(ChordSpec chord) {
+			KeyChangeProgressionNode node = (KeyChangeProgressionNode) get(chord);
+			return (node == null) ? false : (node.isInToKey());
+		}
+		
+		public boolean isInBothKeys(ChordSpec chord) {
+			KeyChangeProgressionNode node = (KeyChangeProgressionNode) get(chord);
+			return (node == null) ? false : (node.isInFromKey() && node.isInToKey());
 		}
 		
 		/**
@@ -335,8 +371,13 @@ public class ChordProgressions {
 					continue;
 				if (!(successor instanceof KeyChangeProgressionNode))
 					throw new IllegalStateException("Only KeyChangeProgressionNodes are allowed in a KeyChange.");
-				paths.add(recurse(new ArrayList<>(visited), destination, maxChords));
+				ArrayList<KeyChangeProgressionNode> visited2 = new ArrayList<>(visited);
+				visited2.add((KeyChangeProgressionNode) successor);
+				paths.add(recurse(visited2, destination, maxChords));
 			}
+			
+			// prune dead ends:
+			paths.removeIf(path -> path == null);
 			
 			Collections.sort(paths, new Comparator<List<KeyChangeProgressionNode>>(){
 				@Override
