@@ -1,5 +1,7 @@
 package theory;
 
+import java.util.Arrays;
+
 /**
  * The seven rotations of the diatonic scale
  * 
@@ -48,7 +50,7 @@ public enum Mode implements Scale {
 	 */
 	public static Mode equivalent(Scale scale) {
 		for (Mode mode : Mode.values())
-			if (mode.intervals().equals(scale.intervals()))
+			if (Arrays.equals(mode.intervals(), scale.intervals()))
 				return mode;
 		return null;
 	}
