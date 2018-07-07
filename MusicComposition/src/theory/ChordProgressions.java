@@ -377,8 +377,9 @@ public class ChordProgressions {
 			
 			KeyChangeProgressionNode lastChord = visited.get(visited.size()-1);
 			for (ProgressionNode successor : lastChord.getSuccessors()) {
-				if (visited.contains(successor))
-					continue;
+				// commenting to allow repeats:
+//				if (visited.contains(successor))
+//					continue;
 				if (!(successor instanceof KeyChangeProgressionNode))
 					throw new IllegalStateException("Only KeyChangeProgressionNodes are allowed in a KeyChange.");
 				ArrayList<KeyChangeProgressionNode> visited2 = new ArrayList<>(visited);
@@ -392,6 +393,7 @@ public class ChordProgressions {
 			Collections.sort(paths, new Comparator<List<KeyChangeProgressionNode>>(){
 				@Override
 				public int compare(List<KeyChangeProgressionNode> path1, List<KeyChangeProgressionNode> path2) {
+					// prefer ambiguous progressions (in both keys for longer)
 					long path1CommonChords = path1.stream()
 							.filter(KeyChangeProgressionNode::isInFromKey)
 							.filter(KeyChangeProgressionNode::isInToKey)
@@ -400,7 +402,13 @@ public class ChordProgressions {
 							.filter(KeyChangeProgressionNode::isInFromKey)
 							.filter(KeyChangeProgressionNode::isInToKey)
 							.count();
-					return (int) (path2CommonChords - path1CommonChords); // flipped to put greater one first
+					if (path1CommonChords != path2CommonChords)
+						return (int) (path2CommonChords - path1CommonChords); // flipped to put greater one first
+					
+					// prefer non-repetitive progressions (fewer chord repeats)
+					long path1Duplicates = path1.size() - path1.stream().distinct().count();
+					long path2Duplicates = path2.size() - path2.stream().distinct().count();
+					return (int) (path1Duplicates - path2Duplicates); // puts path with fewer duplicates first
 				}
 			});
 			
