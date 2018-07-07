@@ -106,7 +106,7 @@ public class BeadRunner {
 //						List<MidiNote> notes = measure.getNotes(time); // misses times in between beats
 						List<MidiNote> notes = measure.getNotes(lastTime, time);
 						if (!notes.isEmpty())
-							System.out.print(String.format("Notes at time %.2f: ", time / beatValue + 1));
+							System.out.print(String.format("Beat %.2f: ", time / beatValue + 1));
 						for (MidiNote note : notes) {
 							pitch = note.getPitch();
 							System.out.print(pitch + " ");
