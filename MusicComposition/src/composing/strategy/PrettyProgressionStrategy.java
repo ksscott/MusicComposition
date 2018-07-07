@@ -5,6 +5,7 @@ import static composing.RandomUtil.roll;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -24,6 +25,7 @@ import theory.Key;
 import theory.Measure;
 import theory.MidiNote;
 import theory.MidiPitch;
+import theory.Mode;
 import theory.Tempo;
 import theory.analysis.Analysis;
 import theory.analysis.Phrase;
@@ -46,7 +48,7 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		this.melodyWriter = new PrettyMelodyWriter();
 		this.key = key;
 		this.currentTempo = Tempo.ADAGIETTO;
-		firstChord = key.chordSpec(1, octave);
+		firstChord = key.chordSpec(1);
 	}
 	
 	@Override
@@ -100,7 +102,14 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 			if (lastSection.size() < missingMeasures)
 				throw new IllegalStateException("Something is wrong... must have miscounted.");
 			ChordSpec nextChord = lastSection.getChord(lastSection.size() - missingMeasures + 1);
-			future.add(composeBar(composition.getMeasure(composition.size()), nextChord)); // XXX
+			Measure nextMeasure = composeBar(composition.getMeasure(composition.size()), nextChord);
+			Set<Key> keys = lastSection.getKeys(lastSection.size() - missingMeasures + 1);
+			String keyString =  "[";
+			for (Key key : keys)
+				keyString += " " + key + " ";
+			keyString += "] ";
+			nextMeasure.setMetaInfo(keyString + nextMeasure.getMetaInfo()); // flipped
+			future.add(nextMeasure); // XXX
 //			future.add(composeBar(composition)); // old implementation
 			int lastEndOfSection = analysis.lastEndOfSection();
 			if (composition.size() >= lastEndOfSection) {
@@ -220,16 +229,18 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 				// after two sections in this key, let's change keys
 //				System.out.println("ATTEMPTING TO CHANGE KEYS!!!");
 				if (lastKey.equals(key)) {
-					nextKey = roll(50) ? key.tonicize(4) : key.tonicize(5);
+					nextKey = roll(50) ? new Key(lastKey.note(4), Key.MAJOR) : new Key(lastKey.note(5), Key.MAJOR);
 				} else {
 					// let's come back
 					nextKey = key;
 				}
-				// hijack control flow:
-				nextKey = lastKey.tonicize(4); // circle of fifths!
 			} else {
 				// let's write a second section in the key lastKey
 			}
+			// hijack control flow:
+			nextKey = new Key(lastKey.note(4), Key.MAJOR); // circle of fifths!
+//			nextKey = lastKey.parallelKey().relativeKey(); // up by minor third; this feels uncomfortable...
+//			System.out.println("Last key: " + lastKey + " ... New key: " + nextKey);
 		}
 		
 		KeyChordProgression lastKeyProgression = 
@@ -273,6 +284,8 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 				previousChord.add(new MidiPitch(note.getPitch()));
 			}
 		}
+		if (previousChord.get().size() < 3)
+			throw new IllegalStateException("A random bug appears! " + previousChord); // rare, have yet to diagnose
 		Measure measure = backgroundChord(previousChord, nextChordSpec);
 		measure.setMetaInfo("(" + nextChordSpec + ")");
 		

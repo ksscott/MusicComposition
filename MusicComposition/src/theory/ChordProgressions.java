@@ -91,35 +91,35 @@ public class ChordProgressions {
 	
 	public static KeyChordProgression standardMajorProgression(Note tonic) {
 		KeyChordProgression progression = new KeyChordProgression(new Key(tonic, Key.MAJOR));
-		ChordSpec five = progression.getKey().chordSpec(5, progression.oct);
+		ChordSpec five = progression.getKey().chordSpec(5);
 		five.setDegree(Degree.SEVENTH);
 		five.setDegreeQuality(Degree.SEVENTH, Quality.MINOR);
 		progression.put(1,4,2);
 		progression.put(1,6);
 		progression.put(1,3);
 //		progression.put(2,5,2);
-		progression.put(progression.getKey().chordSpec(2, progression.oct),five,2);
+		progression.put(progression.getKey().chordSpec(2),five,2);
 		progression.put(2,4);
 		progression.put(2,7);
 		progression.put(3,1);
 		progression.put(3,6);
 //		progression.put(4,5,4);
-		progression.put(progression.getKey().chordSpec(4, progression.oct),five,4);
+		progression.put(progression.getKey().chordSpec(4),five,4);
 		progression.put(4,6);
 		progression.put(4,3);
 		progression.put(4,2);
 //		progressions.put(4,1); // XXX debugging only
 //		progression.put(5,1,3);
-		progression.put(five,progression.getKey().chordSpec(4, progression.oct),3);
+		progression.put(five,progression.getKey().chordSpec(1),3);
 //		progression.put(5,6);
-		progression.put(five,progression.getKey().chordSpec(4, progression.oct),6);
+		progression.put(five,progression.getKey().chordSpec(6));
 //		progression.put(5,4);
-		progression.put(five,progression.getKey().chordSpec(4, progression.oct));
+		progression.put(five,progression.getKey().chordSpec(4));
 		progression.put(6,4,2);
 		progression.put(6,2,2);
 		progression.put(6,1);
 //		progression.put(7,5);
-		progression.put(progression.getKey().chordSpec(7, progression.oct),five);
+		progression.put(progression.getKey().chordSpec(7),five);
 		progression.put(7,1);
 		return progression;
 	}
@@ -239,7 +239,6 @@ public class ChordProgressions {
 	public static class KeyChordProgression extends ChordProgression {
 		
 		protected Key key;
-		protected int oct = 1; // TODO does this number matter?
 		
 		public KeyChordProgression(Key key) {
 			this.key = key;
@@ -250,19 +249,19 @@ public class ChordProgressions {
 		}
 		
 		public void put(int from, int to) {
-			put(key.chordSpec(from, oct), key.chordSpec(to, oct));
+			put(key.chordSpec(from), key.chordSpec(to));
 		}
 		
 		public void put(int from, int to, int weight) {
-			put(key.chordSpec(from, oct), key.chordSpec(to, oct), weight);
+			put(key.chordSpec(from), key.chordSpec(to), weight);
 		}
 		
 		public void remove(int from, int to) {
-			remove(key.chordSpec(from, oct), key.chordSpec(to, oct));
+			remove(key.chordSpec(from), key.chordSpec(to));
 		}
 
 		public ChordSpec getNext(int from) {
-			return getNext(key.chordSpec(from, oct));
+			return getNext(key.chordSpec(from));
 		}
 		
 		@Override
@@ -325,8 +324,8 @@ public class ChordProgressions {
 		 * @return list of chords to play to change keys, including the first and last given
 		 */
 		public List<ChordSpec> progress(int fromChordDegree, int toChordDegree, int maxChords) {
-			KeyChangeProgressionNode fromNode = (KeyChangeProgressionNode) get(from.key.chordSpec(fromChordDegree, 1));
-			KeyChangeProgressionNode toNode = (KeyChangeProgressionNode) get(to.key.chordSpec(toChordDegree, 1));
+			KeyChangeProgressionNode fromNode = (KeyChangeProgressionNode) get(from.key.chordSpec(fromChordDegree));
+			KeyChangeProgressionNode toNode = (KeyChangeProgressionNode) get(to.key.chordSpec(toChordDegree));
 			
 			ArrayList<KeyChangeProgressionNode> list = new ArrayList<>();
 			list.add(fromNode);
@@ -334,7 +333,12 @@ public class ChordProgressions {
 			if (result == null)
 				throw new RuntimeException("No valid progression found to fulfill the given requirements.");
 			
-			return result.stream().map(ProgressionNode::getChord).collect(Collectors.toList());
+			List<ChordSpec> chords = result.stream().map(ProgressionNode::getChord).collect(Collectors.toList());
+			System.out.print("Key Change [" + getFromKey() + " -> " + getToKey() + "] ");
+			for (ChordSpec chord : chords)
+				System.out.print(chord + " ");
+			System.out.println();
+			return chords;
 		}
 		
 		public Key getFromKey() {
@@ -367,7 +371,7 @@ public class ChordProgressions {
 		 * @return
 		 */
 		private List<KeyChangeProgressionNode> recurse(List<KeyChangeProgressionNode> visited, KeyChangeProgressionNode destination, int maxChords) {
-			if (visited.contains(destination))
+			if (visited.get(visited.size()-1).equals(destination) && visited.size() > 1)
 				return visited;
 			if (visited.size() >= maxChords) {
 				return null;
@@ -389,10 +393,18 @@ public class ChordProgressions {
 			
 			// prune dead ends:
 			paths.removeIf(path -> path == null);
+			// require dominant just before next tonic
+			paths.removeIf(path -> to.key.scaleDegree(path.get(path.size()-2).getChord().getTonic()) != 5);
 			
 			Collections.sort(paths, new Comparator<List<KeyChangeProgressionNode>>(){
 				@Override
 				public int compare(List<KeyChangeProgressionNode> path1, List<KeyChangeProgressionNode> path2) {
+					// prefer non-repetitive progressions (fewer chord repeats)
+					long path1Duplicates = path1.size() - path1.stream().distinct().count();
+					long path2Duplicates = path2.size() - path2.stream().distinct().count();
+					if (path1Duplicates != path2Duplicates)
+						return (int) (path1Duplicates - path2Duplicates); // puts path with fewer duplicates first
+					
 					// prefer ambiguous progressions (in both keys for longer)
 					long path1CommonChords = path1.stream()
 							.filter(KeyChangeProgressionNode::isInFromKey)
@@ -405,10 +417,7 @@ public class ChordProgressions {
 					if (path1CommonChords != path2CommonChords)
 						return (int) (path2CommonChords - path1CommonChords); // flipped to put greater one first
 					
-					// prefer non-repetitive progressions (fewer chord repeats)
-					long path1Duplicates = path1.size() - path1.stream().distinct().count();
-					long path2Duplicates = path2.size() - path2.stream().distinct().count();
-					return (int) (path1Duplicates - path2Duplicates); // puts path with fewer duplicates first
+					return 0; // TODO other criteria
 				}
 			});
 			

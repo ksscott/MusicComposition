@@ -43,7 +43,13 @@ public class Key implements Cloneable {
 	}
 	
 	public boolean contains(Note note) {
-		return Arrays.asList(scale.intervalsFromRoot()).contains(tonic.halfStepsTo(note));
+		if (scale.getWidth() != 12)
+			throw new IllegalStateException("Only keys repeating every octave support contains at this time.");
+		int intervalAbove = tonic.halfStepsTo(note);
+		for (int i : scale.intervalsFromRoot())
+			if (i == intervalAbove)
+				return true;
+		return false;
 	}
 	
 	public boolean contains(MidiPitch pitch) {
@@ -328,22 +334,22 @@ public class Key implements Cloneable {
 		return chord;
 	}
 	
-	public ChordSpec chordSpec(int scaleDegree, int octave) {
-		return new ChordSpec(note(scaleDegree), chordQuality(chord(scaleDegree, octave)));
+	public ChordSpec chordSpec(int scaleDegree) {
+		return new ChordSpec(note(scaleDegree), chordQuality(chord(scaleDegree, 1))); // any octave
 	}
 	
 	public Key relativeKey() {
-		if (scale == MAJOR)
+		if (scale.equals(MAJOR))
 			return new Key(tonic.halfStepsAbove(-3), MINOR);
-		if (scale == MINOR)
+		if (scale.equals(MINOR))
 			return new Key(tonic.halfStepsAbove(3), MAJOR);
 		throw new UnsupportedOperationException("Getting the relative key is only supported for the MAJOR and MINOR modes.");
 	}
 	
 	public Key parallelKey() {
-		if (scale == MAJOR)
+		if (scale.equals(MAJOR))
 			return new Key(tonic, MINOR);
-		if (scale == MINOR)
+		if (scale.equals(MINOR))
 			return new Key(tonic, MAJOR);
 		throw new UnsupportedOperationException("Getting the parallel key is only supported for the MAJOR and MINOR modes.");
 	}
@@ -351,7 +357,7 @@ public class Key implements Cloneable {
 	public Key tonicize(int scaleDegree) {
 		if (!scale.isDiatonic())
 			throw new UnsupportedOperationException("Operation currently only supported for diatonic scales");
-		return new Key(note(scaleDegree), Mode.equivalent(scale).revolve(scaleDegree));
+		return new Key(note(scaleDegree), Mode.equivalent(scale).revolve(scaleDegree - 1));
 	}
 	
 	@Override
@@ -361,7 +367,7 @@ public class Key implements Cloneable {
 	
 	@Override
 	public String toString() {
-		return new MidiPitch(tonic, 1) + " " + scale;
+		return tonic + "-" + scale;
 	}
 
 	@Override
