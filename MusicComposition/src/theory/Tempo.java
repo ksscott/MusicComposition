@@ -4,6 +4,7 @@ public enum Tempo {
 	
 	// BPM taken from Wikipedia: "Tempo"
 
+	// ordered by average tempo, not lowest as in Wikipedia
 	LARGHISSIMO(20, 24), // 20 not listed
 	GRAVE(25, 45),
 	LARGO(40, 60),
@@ -11,9 +12,9 @@ public enum Tempo {
 	LARGHETTO(60, 66),
 	ADAGIO(66, 76),
 	ADAGIETTO(72, 76),
+	MARCIA_MODERATO(83, 85), // weirdo, was two slots down
 	ANDANTE(76, 108),
 	ANDANTINO(80, 108),
-	MARCIA_MODERATO(83, 85),
 	ANDANTE_MODERATO(92, 112),
 	MODERATO(108, 120),
 	ALLEGRETTO(112, 120),
