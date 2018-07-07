@@ -51,7 +51,7 @@ public class PrettyMelodyWriter implements MelodyWriter {
 		
 		Optional<Integer> highest = allPitchesInAllMeasures.stream().map(MidiPitch::get).reduce((a,b) -> a < b ? b : a);
 		
-		int ornamentChance = 35;
+		int ornamentChance = 33;
 		int appoggiaturaChance = 70; // = (ornamentChance * XX)% 
 		int mordentChance = 90; // = (ornamentChance * (100-appoggiaturaChance) * XX)%
 //		int trillChance = 70; // = (ornamentChance * (100-appoggiaturaChance) * (100-mordentChance) * XX)%
