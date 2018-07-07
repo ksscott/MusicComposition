@@ -12,6 +12,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import theory.ChordProgressions.ChordProgression.ProgressionNode;
+import theory.ChordSpec.Degree;
+import theory.ChordSpec.Quality;
 
 /**
  * Simplistic graph of chords and their possible successors
@@ -30,6 +32,7 @@ public class ChordProgressions {
 	 * @return
 	 */
 	public static Chord voiceLead(Chord lastChord, ChordSpec nextChordSpec, int bassMin, int bassMax) {
+//		System.out.println("Voice leading from chord: " + lastChord);
 		Chord retval = new Chord();
 		
 		List<MidiPitch> lastChordPitches = lastChord.get();
@@ -60,10 +63,8 @@ public class ChordProgressions {
 //		boolean bassNoteUp = bassPitch.compareTo(previousBassPitch) < 0; // TODO maybe use this
 		
 		for (MidiPitch pitch : lastChordPitches.subList(1, lastChordPitches.size())) {
-//			System.out.println("Leading from pitch: " + pitch);
 			// for remaining pitches, attempt to step downward
 			for (int i=pitch.get()-4; i<pitch.get()+12; i++) {
-//				System.out.println("Testing pitch: " + i);
 				if (i <= lastPitchAdded)
 					continue;
 				
@@ -75,7 +76,7 @@ public class ChordProgressions {
 					}
 				}
 				if (found) {
-//					System.out.println("Voice leading to pitch: " + i);
+//					System.out.println("Voice leading pitch " + pitch.get() + " to pitch: " + i);
 					retval.add(new MidiPitch(i));
 					lastPitchAdded = i;
 					break;
@@ -90,26 +91,35 @@ public class ChordProgressions {
 	
 	public static KeyChordProgression standardMajorProgression(Note tonic) {
 		KeyChordProgression progression = new KeyChordProgression(new Key(tonic, Key.MAJOR));
+		ChordSpec five = progression.getKey().chordSpec(5, progression.oct);
+		five.setDegree(Degree.SEVENTH);
+		five.setDegreeQuality(Degree.SEVENTH, Quality.MINOR);
 		progression.put(1,4,2);
 		progression.put(1,6);
 		progression.put(1,3);
-		progression.put(2,5,2);
+//		progression.put(2,5,2);
+		progression.put(progression.getKey().chordSpec(2, progression.oct),five,2);
 		progression.put(2,4);
 		progression.put(2,7);
 		progression.put(3,1);
 		progression.put(3,6);
-		progression.put(4,5,4);
+//		progression.put(4,5,4);
+		progression.put(progression.getKey().chordSpec(4, progression.oct),five,4);
 		progression.put(4,6);
 		progression.put(4,3);
 		progression.put(4,2);
 //		progressions.put(4,1); // XXX debugging only
-		progression.put(5,1,3);
-		progression.put(5,6);
-		progression.put(5,4);
+//		progression.put(5,1,3);
+		progression.put(five,progression.getKey().chordSpec(4, progression.oct),3);
+//		progression.put(5,6);
+		progression.put(five,progression.getKey().chordSpec(4, progression.oct),6);
+//		progression.put(5,4);
+		progression.put(five,progression.getKey().chordSpec(4, progression.oct));
 		progression.put(6,4,2);
 		progression.put(6,2,2);
 		progression.put(6,1);
-		progression.put(7,5);
+//		progression.put(7,5);
+		progression.put(progression.getKey().chordSpec(7, progression.oct),five);
 		progression.put(7,1);
 		return progression;
 	}
@@ -124,7 +134,7 @@ public class ChordProgressions {
 		
 		protected ProgressionNode get(ChordSpec chord) {
 			for (ProgressionNode node : this) {
-				if (node.getChord().equals(chord))
+				if (node.getChord().getTonic().equals(chord.getTonic()))
 					return node;
 			}
 			return null;
