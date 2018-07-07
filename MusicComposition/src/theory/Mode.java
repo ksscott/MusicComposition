@@ -2,6 +2,8 @@ package theory;
 
 import java.util.Arrays;
 
+import static composing.RandomUtil.modPos;
+
 /**
  * The seven rotations of the diatonic scale
  * 
@@ -25,7 +27,7 @@ public enum Mode implements Scale {
 		int length = DIATONIC_INTERVALS.length;
 		int[] intervals = new int[length];
 		for (int i=0; i<length; i++) {
-			intervals[i] = DIATONIC_INTERVALS[(i + ordinal() + length) % length];
+			intervals[i] = DIATONIC_INTERVALS[modPos(i + ordinal(), length)];
 		}
 		return intervals;
 	}
@@ -41,7 +43,7 @@ public enum Mode implements Scale {
 	 */
 	public Mode revolve(int steps) {
 		Mode[] values = values();
-		return values[(ordinal()+steps)%values.length];
+		return values[modPos((ordinal()+steps),values.length)];
 	}
 	
 	/**
