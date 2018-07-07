@@ -24,9 +24,8 @@ public class PrettyMelodyWriter implements MelodyWriter {
 
 	@Override
 	public Phrase writeMelody(List<Measure> measures) {
-		Phrase phrase = new Phrase();
-		
-		// what follows is a crude POC
+		if (measures.isEmpty())
+			return new Phrase();
 		
 		Set<MidiPitch> allPitchesInAllMeasures = measures.stream()
 				.flatMap(measure -> measure.getNotes(0, measure.beats()*measure.beatValue()).stream())
@@ -34,6 +33,21 @@ public class PrettyMelodyWriter implements MelodyWriter {
 				.map(MidiPitch::new)
 				.collect(Collectors.toSet());
 		Key key = Key.inferKey(allPitchesInAllMeasures);
+		
+		return writeMelody(measures, key);
+	}
+	
+	public Phrase writeMelody(List<Measure> measures, Key key) {
+		Phrase phrase = new Phrase();
+		
+		if (measures.isEmpty())
+			return phrase;
+		
+		Set<MidiPitch> allPitchesInAllMeasures = measures.stream()
+				.flatMap(measure -> measure.getNotes(0, measure.beats()*measure.beatValue()).stream())
+				.map(MidiNote::getPitch)
+				.map(MidiPitch::new)
+				.collect(Collectors.toSet());
 		
 		Optional<Integer> highest = allPitchesInAllMeasures.stream().map(MidiPitch::get).reduce((a,b) -> a < b ? b : a);
 		
