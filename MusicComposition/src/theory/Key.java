@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import theory.ChordSpec.Degree;
 import theory.ChordSpec.Quality;
 
 public class Key implements Cloneable {
@@ -299,6 +300,10 @@ public class Key implements Cloneable {
 	
 	// unsure if this is the best method signature
 	public Chord chord(int scaleDegree, int octave) {
+		return chord(scaleDegree, Degree.NONE, octave);
+	}
+	
+	public Chord chord(int scaleDegree, Degree chordDegree, int octave) {
 		Chord chord = new Chord();
 		
 		int[] intervals = scale.intervals();
@@ -306,7 +311,7 @@ public class Key implements Cloneable {
 		if (scaleDegree < 1 || scaleDegree > length)
 			throw new IllegalArgumentException();
 			
-		int numThirdsAbove = 2; // how many times to add a third above the root
+		int numThirdsAbove = 2 + chordDegree.ordinal(); // how many times to add a third above the root
 		
 		int pitch = MidiPitch.inOctave(note(scaleDegree), octave);
 		chord.add(new MidiPitch(pitch));
@@ -314,7 +319,7 @@ public class Key implements Cloneable {
 		
 		for (int i=0; i<numThirdsAbove; i++) {
 			for (int j=0; j<2; j++) {
-				pitch += intervals[(2*i+j+scaleDegree-1) % length];
+				pitch += intervals[modPos((2*i+j+scaleDegree-1), length)];
 			}
 			chord.add(new MidiPitch(pitch));
 //			System.out.println("pitch " + pitch);
