@@ -34,9 +34,6 @@ public class ChordBuilder {
 		
 		int[] intervalsFromRoot = scale.intervalsFromRoot();
 		int degrees = intervalsFromRoot.length;
-		int scaleSize = 0;
-		for (int interval : scale.intervals())
-			scaleSize += interval;
 		
 		for (ChordNote chordNote : noteMask) {
 			int halfStepsAboveRoot = 0;
@@ -48,7 +45,7 @@ public class ChordBuilder {
 				octavesAbove++;
 			}
 			
-			halfStepsAboveRoot += octavesAbove*scaleSize;
+			halfStepsAboveRoot += octavesAbove*scale.getWidth();
 			halfStepsAboveRoot += intervalsFromRoot[stepsAboveRoot];
 			halfStepsAboveRoot += chordNote.accidental.pitchAdjustment();
 			chord.add(rootPitch.above(halfStepsAboveRoot));

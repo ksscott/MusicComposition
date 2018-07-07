@@ -43,6 +43,9 @@ public interface Scale {
 		return retval;
 	}
 	
+	/**
+	 * @return octave size in half steps
+	 */
 	public default int getWidth() {
 		int width = 0;
 		for (int interval : intervals())
