@@ -46,4 +46,13 @@ public class Chord implements Iterable<MidiPitch> {
 	public Iterator<MidiPitch> iterator() {
 		return get().iterator();
 	}
+	
+	@Override
+	public String toString() {
+		String string = "Chord(";
+		for (MidiPitch pitch : get())
+			string += pitch;
+		string += ")";
+		return string;
+	}
 }
