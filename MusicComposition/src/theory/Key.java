@@ -128,6 +128,26 @@ public class Key implements Cloneable {
 		return new Note(Letter.A, Accidental.FLAT); // didn't check below A or above G, must be Ab
 	}
 	
+	/**
+	 * Gives {@link Accidental#SHARP sharp} versions of notes.
+	 * <br> (TODO general implementation requires much more context)
+	 * 
+	 * @param pitch the pitch to be named as a Note
+	 * @return one acceptable Note name for the given MidiPitch
+	 */
+	public static Note toSharpNote(MidiPitch pitch) {
+		final MidiPitch aFour = new MidiPitch(69);
+		int halfStepsAboveA = modPos(aFour.halfStepsTo(pitch), 12);
+		int[] intervals = Key.MINOR.intervalsFromRoot();
+		for (int i=0; i<intervals.length; i++) {
+			if (halfStepsAboveA == intervals[i])
+				return new Note(Letter.values()[i]);
+			if (halfStepsAboveA < intervals[i])
+				return new Note(Letter.values()[i-1], Accidental.SHARP);
+		}
+		return new Note(Letter.G, Accidental.SHARP); // didn't check below A or above G, must be Ab
+	}
+	
 	/** @see #inferDiatonic(Collection) */
 	public static Key inferDiatonic(Set<Note> notes) {
 		return inferDiatonic(notes.stream().map(note -> new MidiPitch(note, 1)).collect(Collectors.toSet()));

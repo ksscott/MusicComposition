@@ -33,6 +33,31 @@ public class Note implements Cloneable, Comparable<Note> {
 		return other.index == this.index;
 	}
 	
+	// Unsure if I want to keep these two methods here:
+	public String toFlatNoteName() {
+		int halfStepsAboveA = index;
+		int[] intervals = Key.MINOR.intervalsFromRoot();
+		for (int i=0; i<intervals.length; i++) {
+			if (halfStepsAboveA == intervals[i])
+				return Letter.values()[i].name();
+			if (halfStepsAboveA < intervals[i])
+				return Letter.values()[i].name() + Accidental.FLAT.getSymbol();
+		}
+		return Letter.A.name() + Accidental.FLAT.getSymbol(); // didn't check below A or above G, must be Ab
+	}
+	
+	public String toSharpNoteName() {
+		int halfStepsAboveA = index;
+		int[] intervals = Key.MINOR.intervalsFromRoot();
+		for (int i=0; i<intervals.length; i++) {
+			if (halfStepsAboveA == intervals[i])
+				return Letter.values()[i].name();
+			if (halfStepsAboveA < intervals[i])
+				return Letter.values()[i-1].name() + Accidental.SHARP.getSymbol();
+		}
+		return Letter.G.name() + Accidental.SHARP.getSymbol(); // didn't check below A or above G, must be G#
+	}
+	
 	@Override
 	public Note clone() {
 		return new Note(index);
@@ -71,8 +96,10 @@ public class Note implements Cloneable, Comparable<Note> {
 	
 	@Override
 	public String toString() {
-		// temporary:
-		return "Note" + index;
+//		// temporary:
+//		return "Note" + index;
+		
+		return toFlatNoteName();
 	}
 	
 }
