@@ -58,10 +58,9 @@ public class ScaleImpl implements Scale {
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (!(obj instanceof Scale)) // am I breaking the equals contract here?
 			return false;
-		ScaleImpl other = (ScaleImpl) obj;
-		if (!Arrays.equals(intervals, other.intervals))
+		if (!Arrays.equals(intervals, ((Scale) obj).intervals()))
 			return false;
 		return true;
 	}
