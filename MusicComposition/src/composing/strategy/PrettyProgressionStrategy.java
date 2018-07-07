@@ -3,10 +3,10 @@ package composing.strategy;
 import static composing.RandomUtil.roll;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,20 +29,31 @@ import theory.analysis.Analysis;
 import theory.analysis.Phrase;
 import theory.analysis.Section;
 
+/**
+ * Yes, it's messy. Leave me alone.
+ */
 public class PrettyProgressionStrategy implements ComposingStrategy {
 	
-	protected int octave = 2;
+	PrettyMelodyWriter melodyWriter;
+	
+	protected int octave = 3;
 	protected Key key;
+	protected Tempo currentTempo;
+	
 	protected ChordSpec firstChord;
 	
 	public PrettyProgressionStrategy(Key key) {
+		this.melodyWriter = new PrettyMelodyWriter();
 		this.key = key;
+		this.currentTempo = Tempo.ADAGIETTO;
 		firstChord = key.chordSpec(1, octave);
 	}
 	
 	@Override
 	public Measure generateFirstMeasure() {
-		return composeBar((Measure) null, firstChord);
+		Measure firstBar = composeBar((Measure) null, firstChord);
+		writeMelody(Arrays.asList(firstBar), key); // TODO melody jumps up high after first bar; given no context
+		return firstBar;
 	}
 
 	@Override
@@ -60,6 +71,7 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		if (missingMeasures <= 0 && future.size() <= sectionSize) {
 			// sections are full, write a new one
 			ChordsSection nextSection = new ChordsSection(sectionSize);
+			ChordSpec precedingChord;
 			if (measuresWithoutSection > 0) {
 				// measures at end of piece without a section
 				List<Measure> rogueMeasures = composition.getMeasures(
@@ -68,8 +80,14 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 					throw new IllegalStateException("Somehow have the wrong number of rogue measures...");
 				nextSection.putKey(1, key); // relies on first-measure behavior of generateFirstMeasure() -> composeBar()
 				nextSection.putChord(1, firstChord); // making some assumptions here
+				precedingChord = null; // can pass null because nextSection is not empty
+			} else {
+				// get last chord
+				List<Section> sections = analysis.getSections();
+				ChordsSection section = (ChordsSection) sections.get(sections.size() - 1);
+				precedingChord = section.getChord(section.size());
 			}
-			fillSection(nextSection, nextSectionProgression(analysis));
+			fillSection(nextSection, nextSectionProgression(analysis), precedingChord);
 			analysis.addSection(nextSection);
 //			System.out.println("Adding new section.");
 		} else if (missingMeasures > 0) {
@@ -82,23 +100,38 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 			if (lastSection.size() < missingMeasures)
 				throw new IllegalStateException("Something is wrong... must have miscounted.");
 			ChordSpec nextChord = lastSection.getChord(lastSection.size() - missingMeasures + 1);
-			future.add(composeBar((Measure) null, nextChord));
+			future.add(composeBar(composition.getMeasure(composition.size()), nextChord)); // XXX
 //			future.add(composeBar(composition)); // old implementation
-		}
-		if (future.size() >= sectionSize) {
-			// melody
-			try {
-				List<Measure> measuresWithoutMelody = future.stream().filter(measure -> !measure.getMetaInfo().contains("melody")).collect(Collectors.toList());
-				if (measuresWithoutMelody.size() >= 8) {
-					Phrase melody = new PrettyMelodyWriter().writeMelody(measuresWithoutMelody);
-					Measure.writeOnto(melody, measuresWithoutMelody, 0.0);
-					measuresWithoutMelody.forEach(measure -> measure.setMetaInfo(measure.getMetaInfo() + " melody"));
+			int lastEndOfSection = analysis.lastEndOfSection();
+			if (composition.size() >= lastEndOfSection) {
+				// melody
+				try {
+					List<Measure> measuresWithoutMelody = future.stream()
+							.filter(measure -> measure.getMeasureNumber() <= lastEndOfSection)
+							.filter(measure -> !measure.getMetaInfo().contains("melody"))
+							.collect(Collectors.toList());
+					if (measuresWithoutMelody.size() >= 8) {
+						writeMelody(measuresWithoutMelody);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
-			} catch (Exception e) {
-				e.printStackTrace();
 			}
 		}
 		return future.size() > 16;
+	}
+
+	/**
+	 * @param increase <code>true</code> to increase the tempo by 1, or false to decrease it by 1
+	 * @return the tempo after the change
+	 */
+	public Tempo requestTempoChange(boolean increase) {
+		int newTempoOrdinal = currentTempo.ordinal() + (increase ? 1 : -1);
+		Tempo[] tempi = Tempo.values();
+		// bound:
+		newTempoOrdinal = Math.max(0, Math.min(tempi.length-1, newTempoOrdinal));
+		currentTempo = tempi[newTempoOrdinal];
+		return currentTempo;
 	}
 
 	/**
@@ -107,10 +140,11 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 	 * @param nextSection an incomplete section to be filled out
 	 * @param progression
 	 */
-	private void fillSection(ChordsSection nextSection, ChordProgression progression) {
+	private void fillSection(ChordsSection nextSection, ChordProgression progression, ChordSpec precedingChord) {
 		List<ChordSpec> chordSpecs = nextSection.getAllChords();
 		
-		ChordSpec lastChordSpec = chordSpecs.isEmpty() ? firstChord : chordSpecs.get(chordSpecs.size() - 1);
+		ChordSpec lastChordSpec = !chordSpecs.isEmpty() ? chordSpecs.get(chordSpecs.size() - 1) : 
+			(precedingChord == null ? firstChord : precedingChord);
 		
 		int i = chordSpecs.size() + 1;
 		if (progression instanceof KeyChange) {
@@ -134,6 +168,7 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 				if (keyChange.isInToKey(chord)) {
 					nextSection.putKey(i, toKey);
 				}
+				lastChordSpec = chord;
 				i++;
 			}
 			if (i <= nextSection.size())
@@ -141,12 +176,17 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		}
 		// whether empty or partially full from the KeyChange progression,
 		// fill chordSpecs up to 8 chords
+//		System.out.print("Progressing to measures:");
 		while (i <= nextSection.size()) {
 			Key progressionKey = ((KeyChordProgression) progression).getKey();
-			nextSection.putChord(i, progression.getNext(lastChordSpec));
+			ChordSpec nextChordSpec = progression.getNext(lastChordSpec);
+			nextSection.putChord(i, nextChordSpec);
 			nextSection.putKey(i, progressionKey); // relies on behavior in nextSectionProgression()
+			lastChordSpec = nextChordSpec;
 			i++;
+//			System.out.print(" " + i + ":" + lastChordSpec + "->" + nextChordSpec);
 		}
+//		System.out.println();
 	}
 	
 	private ChordProgression nextSectionProgression(Analysis analysis) {
@@ -169,12 +209,13 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 			lastKey = lastSection.getKeys(lastSection.size()).stream().findAny().orElse(key);
 			// leave nextKey null to not change keys again
 		} else {
+			// last section was not a key change section
 //			System.out.println("COMPOSING SECTION - TBD");
 			lastKey = lastSectionKeys.iterator().next(); // any (only?) key in the last section
 			if (sections.size() == 1)
 				return ChordProgressions.standardMajorProgression(lastKey.getTonic());
 			Section secondLastSection = sections.get(sections.size()-2);
-			if (secondLastSection.getKeys(secondLastSection.size()-1).size() == 1) {
+			if (secondLastSection.getKeys(secondLastSection.size()-1).size() >= 1) { // set back to == when done testing
 				// presume same as lastKey
 				// after two sections in this key, let's change keys
 //				System.out.println("ATTEMPTING TO CHANGE KEYS!!!");
@@ -184,6 +225,8 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 					// let's come back
 					nextKey = key;
 				}
+				// hijack control flow:
+				nextKey = lastKey.tonicize(4); // circle of fifths!
 			} else {
 				// let's write a second section in the key lastKey
 			}
@@ -199,73 +242,6 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 			return lastKeyProgression;
 		}
 	}
-	
-//	/**
-//	 * Allows subclasses to extend this method and write additional music on top of the base line. e.g.
-//	 * <p>
-//	 * Override <br>
-//	 * protected Measure composeBar(IncompleteComposition composition) { <br>
-//	 * Measure measure = super.composeBar(composition); <br>
-//	 * -- Whatever you want to compose here -- <br>
-//	 * return measure; <br>
-//	 * }
-//	 * 
-//	 * @param composition
-//	 * @return
-//	 */
-//	protected Measure composeBar(IncompleteComposition composition) {
-//		Measure lastMeasure = null;
-//		List<Measure> measures = composition.getMeasures();
-//		if (!measures.isEmpty()) {
-//			if (!composition.getFuture().isEmpty())
-//				measures = new ArrayList<>(composition.getFuture());
-//			lastMeasure = measures.get(measures.size() - 1);
-//		}
-//		List<Section> sections = composition.getAnalysis().getSections();
-//		ChordsSection section = (ChordsSection) sections.get(sections.size() - 1);
-//		// ... =>
-////		return composeBar(lastMeasure, nextChordSpec);
-//		
-//		
-//		// old implementation for reference, DELETE AT YOUR OWN RISK:
-////		List<Measure> measures = composition.getMeasures();
-////		int currentChordDegree = 1;
-////		Chord previousChord = key.chord(currentChordDegree, octave); // for first measure only
-//////		System.out.println("Previous chord pitches: ");
-//////		for (MidiPitch pitch : previousChord.get())
-//////			System.out.println(pitch);
-////		if (!measures.isEmpty()) {
-////			if (!composition.getFuture().isEmpty())
-////				measures = new ArrayList<>(composition.getFuture());
-////			Measure lastMeasure = measures.get(measures.size() - 1);
-////			String metaInfo = lastMeasure.getMetaInfo();
-////			Matcher matcher = Pattern.compile("(\\()"+"([0-9])"+"(\\))"+"(.*)").matcher(metaInfo);
-////			matcher.matches(); // I don't understand this API, apparently
-////			int previousChordDegree = Integer.valueOf(matcher.group(2));
-////			currentChordDegree = key.scaleDegree(progression.getNext(previousChordDegree).getTonic());
-////			
-////			
-////			// FIXME must find a much better way than this to get the last chord
-////			// probably by abstracting a high-level Measure class and also adding multiple voices
-//////			System.out.println("Last measure empty? " + meas.isEmpty());
-////			List<MidiNote> lastBeatNotes = lastMeasure.getNotes(lastMeasure.beatValue()*(lastMeasure.beats()-1));
-//////			System.out.println("Last beat notes size: " + notes.size());
-//////			System.out.println("Last beat notes: ");
-//////			for (MidiNote note : notes)
-//////				System.out.println(note);
-////			previousChord = new Chord();
-////			for (MidiNote note : lastBeatNotes) {
-////				previousChord.add(new MidiPitch(note.getPitch()));
-////			}
-////		}
-//////		Measure measure = backgroundChord(previousChord, currentChordDegree);
-////		Measure measure = backgroundChord(previousChord, key.chordSpec(currentChordDegree, octave));
-////		measure.setMetaInfo("(" + currentChordDegree + ")");
-////		
-////		measure.setBpm(Tempo.ADAGIO.getBpm());
-////		
-////		return measure;
-//	}
 	
 	/**
 	 * Allows subclasses to extend this method and write additional music on top of the base line. e.g.
@@ -290,7 +266,7 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 			List<MidiNote> lastBeatNotes = lastMeasure.getNotes(lastMeasure.beatValue()*(lastMeasure.beats()-1));
 //			System.out.println("Last beat notes size: " + notes.size());
 //			System.out.println("Last beat notes: ");
-//			for (MidiNote note : notes)
+//			for (MidiNote note : lastBeatNotes)
 //				System.out.println(note);
 			previousChord = new Chord();
 			for (MidiNote note : lastBeatNotes) {
@@ -300,7 +276,7 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		Measure measure = backgroundChord(previousChord, nextChordSpec);
 		measure.setMetaInfo("(" + nextChordSpec + ")");
 		
-		measure.setBpm(Tempo.ADAGIO.getBpm());
+		measure.setBpm(currentTempo.getBpm());
 		
 		return measure;
 	}
@@ -344,6 +320,18 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		return measure;
 	}
 	
+	private void writeMelody(List<Measure> measuresWithoutMelody) {
+		Phrase melody = melodyWriter.writeMelody(measuresWithoutMelody);
+		Measure.writeOnto(melody, measuresWithoutMelody, 0.0);
+		measuresWithoutMelody.forEach(measure -> measure.setMetaInfo(measure.getMetaInfo() + " melody"));
+	}
+
+	private void writeMelody(List<Measure> measuresWithoutMelody, Key key) {
+		Phrase melody = melodyWriter.writeMelody(measuresWithoutMelody, key);
+		Measure.writeOnto(melody, measuresWithoutMelody, 0.0);
+		measuresWithoutMelody.forEach(measure -> measure.setMetaInfo(measure.getMetaInfo() + " melody"));
+	}
+
 	public String toString() {
 		return "Pretty Chord Progression";
 	}

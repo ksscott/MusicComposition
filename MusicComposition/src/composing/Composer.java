@@ -27,7 +27,7 @@ public class Composer {
 	
 	private List<ComposingStrategy> oldTricks = Arrays.asList(new ComposingStrategy[] { 
 					new TwelveBarImprovStrategy(new Note(Letter.C)),
-					new PrettyProgressionStrategy(new Key(new Note(Letter.A, Accidental.FLAT), Key.MAJOR)),
+					new PrettyProgressionStrategy(new Key(new Note(Letter.C, Accidental.NONE), Key.MAJOR)),
 			});
 	
 	/**
@@ -69,7 +69,7 @@ public class Composer {
 			case REQUEST:
 				for (ComposingStrategy trick : oldTricks)
 					if (trick.toString().toLowerCase().contains(
-							UserInput.REQUEST.getParams(inputString).get(0).toLowerCase())) {
+							command.getParams(inputString).get(0).toLowerCase())) {
 						requests.add(trick);
 						System.out.println("Requested " + trick);
 					}
@@ -87,6 +87,13 @@ public class Composer {
 					} while (nextStrategy.equals(strategy));
 				}
 				return beginComposing(nextStrategy);
+			case TEMPO:
+				String upOrDown = command.getParams(inputString).get(0).toLowerCase();
+				if (upOrDown.equals("up"))
+					thread.requestTempoChange(true);
+				else if (upOrDown.equals("down"))
+					thread.requestTempoChange(false);
+				break;
 			case WRAP_UP:
 				wrapUpRequests++;
 				break;
@@ -120,6 +127,10 @@ public class Composer {
 
 		/** immediately switch pieces */
 		SWITCH(startsWithAny("switch")),
+		
+		/** change tempo */
+		TEMPO(startsWithAny("tempo"),
+				string -> Arrays.asList(string.substring("tempo".length()).trim())),
 
 		/** bring the piece to a close in a natural time */
 		WRAP_UP(startsWithAny("wrap"))

@@ -1,7 +1,9 @@
 package composing;
 
 import composing.strategy.ComposingStrategy;
+import composing.strategy.PrettyProgressionStrategy;
 import theory.Measure;
+import theory.Tempo;
 
 public class ComposerThread extends Thread {
 
@@ -27,7 +29,7 @@ public class ComposerThread extends Thread {
 		}
 	}
 	
-	public Measure writeNextMeasure() {
+	Measure writeNextMeasure() {
 		Measure measure = composition.writeNextMeasure();
 		paused = false;
 		return measure;
@@ -37,10 +39,20 @@ public class ComposerThread extends Thread {
 		return strategy;
 	}
 	
-	public Composition stopComposing() {
+	Composition stopComposing() {
 		this.stopped = true;
 		System.out.println("Done composing " + strategy);
 		return composition.finishComposition();
 	}
-
+	
+	void requestTempoChange(boolean increase) {
+		// FIXME support all or else have a failure mode
+		if (strategy instanceof PrettyProgressionStrategy) {
+			Tempo newTempo = ((PrettyProgressionStrategy) strategy).requestTempoChange(increase);
+			// update measures already composed (consider changing)
+			for (Measure measure : composition.getFuture())
+				measure.setBpm(newTempo.getBpm());
+			System.out.println((increase ? "Increased" : "Decreased") + " tempo to " + newTempo.name());
+		}
+	}
 }
