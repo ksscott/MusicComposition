@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static composing.RandomUtil.*;
 import theory.ChordProgressions.ChordProgression.ProgressionNode;
 import theory.ChordSpec.Degree;
 import theory.ChordSpec.Quality;
@@ -45,12 +46,6 @@ public class ChordProgressions {
 		if (nextChord.isEmpty())
 			return retval;
 		Note bassNote = Key.toFlatNote(nextChord.get().get(0));
-//		Set<Note> acceptableNotes = nextChord.get()
-//											 .stream()
-//											 .map(Key::toFlatNote)
-//											 .collect(Collectors.toSet());
-		
-//		System.out.println("Number of acceptable notes: " + acceptableNotes.size());
 		
 		// decide which way to take the bass note
 		MidiPitch bassPitch = downFiveOrUpFour(previousBassPitch, bassNote); // TODO maybe revisit
@@ -64,13 +59,13 @@ public class ChordProgressions {
 		
 		for (MidiPitch pitch : lastChordPitches.subList(1, lastChordPitches.size())) {
 			// for remaining pitches, attempt to step downward
+			boolean found = false;
 			for (int i=pitch.get()-4; i<pitch.get()+12; i++) {
 				if (i <= lastPitchAdded)
 					continue;
 				
-				boolean found = false;
 				for (MidiPitch acceptable : nextChord.get()) {
-					if (acceptable.halfStepsTo(new MidiPitch(i)) % 12 == 0) { // FIXME inefficient
+					if (modPos(acceptable.get() - i, 12) == 0) {
 						found = true;
 						break;
 					}
@@ -82,6 +77,8 @@ public class ChordProgressions {
 					break;
 				}
 			}
+			if (!found)
+				throw new IllegalArgumentException("Could not find a pitch to voice lead to!");
 		}
 
 		return retval;
