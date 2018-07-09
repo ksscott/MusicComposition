@@ -55,7 +55,9 @@ public class JavaSoundInterfacer {
 //	    synthRcvr.send(offMsg, -1);
 	    synthRcvr.send(myMsg, -1); // -1 means no time stamp
 	    System.out.println("off requested");
-	    // while (true) {}
+	    try { Thread.sleep(1000); } catch (Exception e) { }
+	    try { Thread.sleep(1000); } catch (Exception e) { }
+	    try { Thread.sleep(1000); } catch (Exception e) { }
 	}
 	
 }
