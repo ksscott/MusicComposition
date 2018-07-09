@@ -4,6 +4,8 @@ import static composing.RandomUtil.roll;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -273,6 +275,8 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 			// probably by abstracting a high-level Measure class and also adding multiple voices
 //			System.out.println("Last measure empty? " + meas.isEmpty());
 			List<MidiNote> lastBeatNotes = lastMeasure.getNotes(lastMeasure.beatValue()*(lastMeasure.beats()-1));
+			if (lastBeatNotes.size() < 3)
+				throw new IllegalStateException("The plot thickens!");
 //			System.out.println("Last beat notes size: " + notes.size());
 //			System.out.println("Last beat notes: ");
 //			for (MidiNote note : lastBeatNotes)
@@ -285,6 +289,8 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		if (previousChord.get().size() < 3)
 			throw new IllegalStateException("A random bug appears! " + previousChord); // rare, have yet to diagnose
 		Measure measure = backgroundChord(previousChord, nextChordSpec);
+//		if (lastMeasure != null && roll(30))
+//			tieMeasures(lastMeasure, measure);
 		measure.setMetaInfo("(" + nextChordSpec + ")");
 		
 		measure.setBpm(currentTempo.getBpm());
@@ -323,12 +329,27 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 //				System.out.println("Adding pitch: " + pitch);
 				MidiNote note = new MidiNote(pitch, measure.beatValue());
 				if (i != 0)
-					note.setDynamic(Dynamic.MEZZO_PIANO);
+					note.setDynamic(Dynamic.below(note.getDynamic()));
 				measure.add(note, i*measure.beatValue());
 			}
 		}
 		
 		return measure;
+	}
+	
+	private void tieMeasures(Measure previousMeasure, Measure nextMeasure) {
+		List<MidiNote> lastNotes = previousMeasure.getNotes(3.0*previousMeasure.beatValue()); // hard coded
+		List<MidiNote> firstNotes = nextMeasure.getNotes(0.0); // hard coded
+		Comparator<MidiNote> noteSorter = new Comparator<MidiNote>() {
+			@Override public int compare(MidiNote o1, MidiNote o2) { return o1.getPitch() - o2.getPitch(); }
+		};
+		Collections.sort(lastNotes, noteSorter);
+		Collections.sort(firstNotes, noteSorter);
+		for (int i=0; i<3; i++) { // hard coded number of notes :(
+			MidiNote last = lastNotes.get(i);
+			MidiNote next = firstNotes.get(i);
+			MidiNote.tieOver(last, next);
+		}
 	}
 	
 	private void writeMelody(List<Measure> measuresWithoutMelody) {

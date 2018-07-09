@@ -2,13 +2,12 @@ package main;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Scanner;
-
-import javax.sound.midi.InvalidMidiDataException;
-import javax.sound.midi.MidiUnavailableException;
 
 import composing.Composer;
 import net.beadsproject.beads.core.AudioContext;
@@ -30,11 +29,14 @@ public class BeadRunner {
 	private static Queue<String> userInputs = new PriorityQueue<>();
 	private static boolean empty = true;
 	private static final List<String> STOP_COMMANDS = Arrays.asList(new String[] { "stop", "end", "quit", "kill" });
+	
+	private static Map<Integer,Gain> heldNotes;
 
 	public static void main(String[] args) {
 		InputThread inputThread = new InputThread();
 		inputThread.start();
 		
+		heldNotes = new HashMap<>();
 		final AudioContext ac;
 
 		ac = new AudioContext();
@@ -57,19 +59,11 @@ public class BeadRunner {
 					Composer composer = new Composer();
 					{ measures.add(composer.beginComposing()); }
 					int startOfMeasure = 0;
-					float maxVolume = 0.5f;
+					float maxVolume = 0.4f;
 					
-					int resolution = 1000;
-					Buffer buffer = new Buffer(resolution);
-					{
-						for (int i=0; i<resolution; i++) {
-							float value = 0;
-							for (int j=1; j<8; j++) {
-								value += (1/(double)j/(double)j/(double)j) * Math.sin(i*j*2*Math.PI/resolution);
-							}
-							buffer.buf[i] = value;
-						}
-					}
+					Timbre timbre = getTimbre();
+					Buffer buffer = timbre.getWaveform();
+					int attackTime = timbre.getPeakMillis();
 					
 					int pitch;
 					public void messageReceived(Bead message) {
@@ -129,15 +123,36 @@ public class BeadRunner {
 							pitch = note.getPitch();
 							System.out.print(pitch + " ");
 							float freq = Pitch.mtof(pitch);
-							WavePlayer wp = new WavePlayer(ac, freq, buffer);
-							Gain g = new Gain(ac, 1, new Envelope(ac, 0));
-							g.addInput(wp);
-							ac.out.addInput(g);
 							float millisPerBeat = c.getIntervalUGen().getValue();
 							int duration = (int) (millisPerBeat * note.getDuration() / beatValue);
 							float volume = (float) volume(note.getDynamic());
-							((Envelope)g.getGainUGen()).addSegment(maxVolume*volume, note.getPeakMillis());
-							((Envelope)g.getGainUGen()).addSegment(0, duration, new KillTrigger(g));
+							Gain g;
+							
+							int tiedFrom = note.getTiedFromPitch();
+							if (tiedFrom != 0) {
+								g = heldNotes.get(tiedFrom);
+								WavePlayer tiedWp = (WavePlayer) g.getConnectedInputs().iterator().next();
+								tiedWp.setFrequency(freq);
+//								tiedWp.addInput(arg0);
+								heldNotes.remove(tiedFrom);
+							} else {
+								// start note:
+								g = new Gain(ac, 1, new Envelope(ac, 0));
+								WavePlayer wp = new WavePlayer(ac, freq, buffer);
+								g.addInput(wp);
+								// attackTime = note.getPeakMillis(); // haven't decided who decides this
+								((Envelope)g.getGainUGen()).addSegment(maxVolume*volume, attackTime);
+								ac.out.addInput(g);
+							}
+							if (!note.tiesOver()) {
+								// add note end:
+								((Envelope)g.getGainUGen()).addSegment(0, duration, new KillTrigger(g));
+							}
+							else {
+								// prepare tie to next note
+								heldNotes.put(pitch, g);
+							}
+								
 						}
 						if (!notes.isEmpty())
 							System.out.println();
@@ -187,12 +202,56 @@ public class BeadRunner {
 //		ac.out.addInput(clock);
 //		System.out.println("ac.out outputs: " + ac.out.getOuts());
 //		System.out.println("ac.out ins: " + ac.out.getIns());
-		System.out.println("ac.out connected ugens: " + ac.out.getNumberOfConnectedUGens(0));
-		System.out.println("ac.out connected inputs: " + ac.out.getConnectedInputs().size());
+//		System.out.println("ac.out connected ugens: " + ac.out.getNumberOfConnectedUGens(0));
+//		System.out.println("ac.out connected inputs: " + ac.out.getConnectedInputs().size());
 		bead.setKillListener(new AudioContextStopTrigger(ac)); // y u no work?
 		ac.start();
 //		System.out.println("Connected UGens: " + ac.out.getNumberOfConnectedUGens(0));
 
+	}
+	
+	public static Timbre getSineTimbre() {
+		return new Timbre(150, Buffer.SINE);
+	}
+	
+	public static Timbre getTimbre() {
+		int resolution = 10000;
+		int harmonics = Math.min(1000, resolution/4/20);
+		// decay envelope on harmonics:
+		double nToThe = -2.7;
+		// sinusoidal envelope on harmonics:
+		double nthHarmonicIsMinimum = 2;
+		double minimumHarmonicRatio = .6;
+		double rangeHalf = (1.0 - minimumHarmonicRatio)/2.0;
+		double rangeCenter = 1.0 - rangeHalf;
+		// add noisy neighbors:
+		double neighborDist = .05;
+		double neighborRatio = .15;
+		
+		Buffer buffer = new Buffer(resolution);
+		{
+			for (int i=0; i<resolution; i++) {
+				float value = 0;
+				for (int j=1; j<harmonics+1; j++) {
+					double harmonic = Math.sin(i*2*Math.PI/resolution*j);
+					double harmonicUpperNeighbor = Math.sin(i*2*Math.PI/resolution*(j*(1+neighborDist)));
+					double harmonicLowerNeighbor = Math.sin(i*2*Math.PI/resolution*(j*(1-neighborDist)));
+					double decayEnv = Math.pow(j, nToThe);
+					double sinusoidalEnv = rangeCenter+rangeHalf*Math.cos((j-1.2)*Math.PI/nthHarmonicIsMinimum);
+//					double sinusoidalEnv2 = Math.cos(rangeCenter+rangeHalf*Math.cos((j-1.2)*Math.PI/nthHarmonicIsMinimum/2.0));
+					double envFinal = decayEnv 
+									* sinusoidalEnv 
+//									* sinusoidalEnv2
+									;
+					value += harmonic * envFinal
+						   + harmonicUpperNeighbor * envFinal * neighborRatio
+						   + harmonicLowerNeighbor * envFinal * neighborRatio
+						   ;
+				}
+				buffer.buf[i] = value;
+			}
+		}
+		return new Timbre(120, buffer);
 	}
 
 	public static float random(double x) {
@@ -224,6 +283,17 @@ public class BeadRunner {
 		List<String> inputs = new ArrayList<>(userInputs);
 		empty = true;
 		return inputs;
+	}
+	
+	public static class Timbre {
+		int peakMillis;
+		Buffer waveform;
+		public Timbre(int attackTimeMillis, Buffer waveform) {
+			this.peakMillis = attackTimeMillis;
+			this.waveform = waveform;
+		}
+		public int getPeakMillis() { return peakMillis; }
+		public Buffer getWaveform() { return waveform; }
 	}
 	
 	public static class InputThread extends Thread {

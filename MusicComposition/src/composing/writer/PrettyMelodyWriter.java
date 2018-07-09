@@ -69,7 +69,7 @@ public class PrettyMelodyWriter implements MelodyWriter {
 			for (int i=0; i<measure.beats(); i++) {
 				int steps = risingMelody ? i : -i;
 				MidiNote midiNote = new MidiNote(key.stepsAbove(steps, startingPitch), measure.beatValue());
-				midiNote.setDynamic(Dynamic.MEZZO_PIANO);
+				midiNote.setDynamic(Dynamic.PIANO);
 				measure.setMetaInfo(measure.getMetaInfo() + " " + midiNote.getPitch());
 				if (roll(ornamentChance)) {
 					if (roll(appoggiaturaChance)) {
