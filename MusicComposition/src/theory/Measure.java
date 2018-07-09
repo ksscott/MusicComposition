@@ -123,22 +123,23 @@ public class Measure {
 		setMetaInfo(metaInfo + "\n" + other.getMetaInfo());
 	}
 	
-	public String timesAndNotes() {
-		String measureString = "";
-		Map<Double, List<MidiNote>> measureNotes = notes;
-		List<Double> times = new ArrayList<>(measureNotes.keySet());
-		Collections.sort(times);
-		for (Double time : times) {
-			measureString += String.format("(%.2f,", time);
-			List<MidiNote> list = measureNotes.get(time);
-			for (MidiNote measureNote : list) {
-				measureString += measureNote.getPitch() + ",";
-			}
-			measureString = measureString.substring(0, measureString.length() - 1);
-			measureString += ") ";
-		}
-		return measureString;
-	}
+	// can't remember what this was used for...
+//	public String timesAndNotes() {
+//		String measureString = "";
+//		Map<Double, List<MidiNote>> measureNotes = notes;
+//		List<Double> times = new ArrayList<>(measureNotes.keySet());
+//		Collections.sort(times);
+//		for (Double time : times) {
+//			measureString += String.format("(%.2f,", time);
+//			List<MidiNote> list = measureNotes.get(time);
+//			for (MidiNote measureNote : list) {
+//				measureString += measureNote.getPitch() + ",";
+//			}
+//			measureString = measureString.substring(0, measureString.length() - 1);
+//			measureString += ") ";
+//		}
+//		return measureString;
+//	}
 	
 	public static void writeOnto(Phrase phrase, List<Measure> measures, double offset) { // FIXME honor the offset
 		if (offset + phrase.getStart() < 0)
