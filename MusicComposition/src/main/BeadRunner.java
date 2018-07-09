@@ -7,11 +7,15 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Scanner;
 
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MidiUnavailableException;
+
 import composing.Composer;
 import net.beadsproject.beads.core.AudioContext;
 import net.beadsproject.beads.core.Bead;
 import net.beadsproject.beads.data.Buffer;
 import net.beadsproject.beads.data.Pitch;
+import net.beadsproject.beads.events.AudioContextStopTrigger;
 import net.beadsproject.beads.events.KillTrigger;
 import net.beadsproject.beads.ugens.Clock;
 import net.beadsproject.beads.ugens.Envelope;
@@ -45,15 +49,27 @@ public class BeadRunner {
 		 * nested code.
 		 */
 		Clock clock = new Clock(ac, 500);
-		clock.addMessageListener(
-				//this is the on-the-fly bead
-				new Bead() {
+		
+		//this is the on-the-fly bead
+		Bead bead = new Bead() {
 					Queue<Measure> measures = new PriorityQueue<>();
 					Measure measure;
 					Composer composer = new Composer();
 					{ measures.add(composer.beginComposing()); }
 					int startOfMeasure = 0;
-					float maxVolume = 0.25f;
+					float maxVolume = 0.5f;
+					
+					int resolution = 1000;
+					Buffer buffer = new Buffer(resolution);
+					{
+						for (int i=0; i<resolution; i++) {
+							float value = 0;
+							for (int j=1; j<8; j++) {
+								value += (1/(double)j/(double)j/(double)j) * Math.sin(i*j*2*Math.PI/resolution);
+							}
+							buffer.buf[i] = value;
+						}
+					}
 					
 					int pitch;
 					public void messageReceived(Bead message) {
@@ -65,8 +81,10 @@ public class BeadRunner {
 								// TODO figure out best stopping procedure
 								inputThread.end();
 								composer.finishComposing();
-								c.kill();
-								ac.stop();
+								clock.kill();
+								ac.out.kill();
+								return;
+//								System.exit(0); // best termination solution?
 							}
 							Measure onTheFlyMeasure = composer.receiveInput(input);
 							if (onTheFlyMeasure != null)
@@ -111,7 +129,7 @@ public class BeadRunner {
 							pitch = note.getPitch();
 							System.out.print(pitch + " ");
 							float freq = Pitch.mtof(pitch);
-							WavePlayer wp = new WavePlayer(ac, freq, Buffer.SINE);
+							WavePlayer wp = new WavePlayer(ac, freq, buffer);
 							Gain g = new Gain(ac, 1, new Envelope(ac, 0));
 							g.addInput(wp);
 							ac.out.addInput(g);
@@ -163,10 +181,17 @@ public class BeadRunner {
 //							((Envelope)g.getGainUGen()).addSegment(0, random(100), new KillTrigger(p));
 //						}
 					}
-				}
-				);
+				};
+		clock.addMessageListener(bead);
 		ac.out.addDependent(clock);
+//		ac.out.addInput(clock);
+//		System.out.println("ac.out outputs: " + ac.out.getOuts());
+//		System.out.println("ac.out ins: " + ac.out.getIns());
+		System.out.println("ac.out connected ugens: " + ac.out.getNumberOfConnectedUGens(0));
+		System.out.println("ac.out connected inputs: " + ac.out.getConnectedInputs().size());
+		bead.setKillListener(new AudioContextStopTrigger(ac)); // y u no work?
 		ac.start();
+//		System.out.println("Connected UGens: " + ac.out.getNumberOfConnectedUGens(0));
 
 	}
 
