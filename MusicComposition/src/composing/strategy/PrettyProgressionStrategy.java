@@ -275,8 +275,21 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 			// probably by abstracting a high-level Measure class and also adding multiple voices
 //			System.out.println("Last measure empty? " + meas.isEmpty());
 			List<MidiNote> lastBeatNotes = lastMeasure.getNotes(lastMeasure.beatValue()*(lastMeasure.beats()-1));
+			// debugging evidence:
+//			[Measure 1] (CM) 55__ 53__ 52ap 50__ melody
+//			Beat 1.00: 48 52 55 55 
+//			Beat 2.00: 48 52 55 53 
+//			Beat 3.00: 48 52 55 53 
+//			Beat 3.50: 52 
+//			Beat 4.00: 48 52 55 50 
+//			[Measure 2] [ C-IONIAN ] (Am)
+//			Beat 1.00: 57 60 
+//			Beat 2.00: 57 60 
+//			Beat 3.00: 57 60 
+//			Beat 4.00: 57 60 
+//			[Measure 0] 
 			if (lastBeatNotes.size() < 3)
-				throw new IllegalStateException("The plot thickens!");
+				throw new IllegalStateException("A random bug appears! ... The plot thickens!"); // rare, have yet to diagnose
 //			System.out.println("Last beat notes size: " + notes.size());
 //			System.out.println("Last beat notes: ");
 //			for (MidiNote note : lastBeatNotes)
@@ -286,8 +299,6 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 				previousChord.add(new MidiPitch(note.getPitch()));
 			}
 		}
-		if (previousChord.get().size() < 3)
-			throw new IllegalStateException("A random bug appears! " + previousChord); // rare, have yet to diagnose
 		Measure measure = backgroundChord(previousChord, nextChordSpec);
 //		if (lastMeasure != null && roll(30))
 //			tieMeasures(lastMeasure, measure);
@@ -337,8 +348,9 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		return measure;
 	}
 	
-	private void tieMeasures(Measure previousMeasure, Measure nextMeasure) {
-		List<MidiNote> lastNotes = previousMeasure.getNotes(3.0*previousMeasure.beatValue()); // hard coded
+	@SuppressWarnings("unused")
+	private void tieMeasures(Measure lastMeasure, Measure nextMeasure) {
+		List<MidiNote> lastNotes = lastMeasure.getNotes(lastMeasure.beatValue()*(lastMeasure.beats()-1));
 		List<MidiNote> firstNotes = nextMeasure.getNotes(0.0); // hard coded
 		Comparator<MidiNote> noteSorter = new Comparator<MidiNote>() {
 			@Override public int compare(MidiNote o1, MidiNote o2) { return o1.getPitch() - o2.getPitch(); }
