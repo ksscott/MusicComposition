@@ -20,6 +20,12 @@ public class Chord implements Iterable<MidiPitch> {
 			this.pitches.add(p);
 	}
 	
+	public Chord(List<MidiPitch> pitches) {
+		this();
+		for (MidiPitch p : pitches)
+			this.pitches.add(p);
+	}
+	
 	public Chord(Chord other) {
 		this();
 		this.pitches.addAll(other.pitches);
