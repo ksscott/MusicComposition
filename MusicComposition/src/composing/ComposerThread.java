@@ -2,8 +2,8 @@ package composing;
 
 import composing.strategy.ComposingStrategy;
 import composing.strategy.PrettyProgressionStrategy;
+import performance.Tempo;
 import theory.Measure;
-import theory.Tempo;
 
 public class ComposerThread extends Thread {
 

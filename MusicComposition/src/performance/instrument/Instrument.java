@@ -1,11 +1,19 @@
-package instrument;
+package performance.instrument;
+
+import performance.Timbre;
 
 public class Instrument { // TODO decide on an architecture surrounding instruments
 	
 	private String name;
+	private Timbre timbre;
 	
-	public Instrument(String name) {
+	public Instrument(String name, Timbre timbre) {
 		this.name = name;
+		this.timbre = timbre;
+	}
+	
+	public Timbre getTimbre() {
+		return timbre;
 	}
 
 	@Override
@@ -18,6 +26,7 @@ public class Instrument { // TODO decide on an architecture surrounding instrume
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((timbre == null) ? 0 : timbre.hashCode());
 		return result;
 	}
 
@@ -35,7 +44,13 @@ public class Instrument { // TODO decide on an architecture surrounding instrume
 				return false;
 		} else if (!name.equals(other.name))
 			return false;
+		if (timbre == null) {
+			if (other.timbre != null)
+				return false;
+		} else if (!timbre.equals(other.timbre))
+			return false;
 		return true;
 	}
+
 
 }

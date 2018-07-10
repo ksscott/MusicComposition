@@ -12,10 +12,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import theory.Dynamic;
+import performance.Dynamic;
+import performance.MidiNote;
 import theory.Key;
 import theory.Measure;
-import theory.MidiNote;
 import theory.MidiPitch;
 import theory.Note;
 import theory.analysis.Phrase;

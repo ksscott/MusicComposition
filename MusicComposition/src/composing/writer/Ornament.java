@@ -1,7 +1,7 @@
 package composing.writer;
 
+import performance.MidiNote;
 import theory.Key;
-import theory.MidiNote;
 import theory.MidiPitch;
 import theory.analysis.Phrase;
 

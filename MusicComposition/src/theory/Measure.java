@@ -10,7 +10,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import instrument.Instrument;
+import performance.MidiNote;
+import performance.instrument.Instrument;
 import theory.analysis.Phrase;
 
 public class Measure {

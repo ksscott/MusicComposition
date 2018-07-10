@@ -15,19 +15,20 @@ import java.util.stream.Collectors;
 
 import composing.IncompleteComposition;
 import composing.writer.PrettyMelodyWriter;
-import instrument.Instrument;
+import main.BeadsTimbre;
+import performance.Dynamic;
+import performance.MidiNote;
+import performance.Tempo;
+import performance.instrument.Instrument;
 import theory.Chord;
 import theory.ChordProgressions;
 import theory.ChordProgressions.ChordProgression;
 import theory.ChordProgressions.KeyChange;
 import theory.ChordProgressions.KeyChordProgression;
 import theory.ChordSpec;
-import theory.Dynamic;
 import theory.Key;
 import theory.Measure;
-import theory.MidiNote;
 import theory.MidiPitch;
-import theory.Tempo;
 import theory.analysis.Analysis;
 import theory.analysis.Phrase;
 import theory.analysis.Section;
@@ -52,8 +53,8 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 		this.melodyWriter = new PrettyMelodyWriter();
 		this.key = key;
 		this.currentTempo = Tempo.ADAGIETTO;
-		this.piano = new Instrument("Piano");
-		this.solo = new Instrument("Solo?");
+		this.piano = new Instrument("Piano", BeadsTimbre.getInstrumentTimbre());
+		this.solo = new Instrument("Solo", BeadsTimbre.getSineTimbre());
 		firstChord = key.chordSpec(1);
 	}
 	

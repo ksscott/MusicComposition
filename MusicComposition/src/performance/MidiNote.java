@@ -1,4 +1,6 @@
-package theory;
+package performance;
+
+import theory.MidiPitch;
 
 public class MidiNote {
 	

@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import theory.MidiNote;
+import performance.MidiNote;
 
 public class Phrase {
 	

@@ -11,7 +11,6 @@ import java.util.Scanner;
 import java.util.Set;
 
 import composing.Composer;
-import instrument.Instrument;
 import net.beadsproject.beads.core.AudioContext;
 import net.beadsproject.beads.core.Bead;
 import net.beadsproject.beads.data.Buffer;
@@ -22,9 +21,11 @@ import net.beadsproject.beads.ugens.Clock;
 import net.beadsproject.beads.ugens.Envelope;
 import net.beadsproject.beads.ugens.Gain;
 import net.beadsproject.beads.ugens.WavePlayer;
-import theory.Dynamic;
+import performance.Dynamic;
+import performance.MidiNote;
+import performance.Timbre;
+import performance.instrument.Instrument;
 import theory.Measure;
-import theory.MidiNote;
 
 public class BeadRunner {
 	
@@ -62,10 +63,6 @@ public class BeadRunner {
 					{ measures.add(composer.beginComposing()); }
 					int startOfMeasure = 0;
 					float maxVolume = 0.4f;
-					
-					Timbre timbre = getTimbre();
-					Buffer buffer = timbre.getWaveform();
-					int attackTime = timbre.getPeakMillis();
 					
 					int pitch;
 					public void messageReceived(Bead message) {
@@ -132,6 +129,10 @@ public class BeadRunner {
 							
 					}
 					private void playNotes(Instrument instrument, List<MidiNote> notes, double millisPerWholeNote) {
+						BeadsTimbre timbre = (BeadsTimbre) instrument.getTimbre(); // FIXME true for now
+						int attackTime = timbre.getPeakMillis();
+						Buffer buffer = timbre.getWaveform();
+						
 						for (MidiNote note : notes) {
 							pitch = note.getPitch();
 							System.out.print(pitch + " ");
@@ -181,94 +182,6 @@ public class BeadRunner {
 
 	}
 	
-	public static Timbre getSineTimbre() {
-		return new Timbre(150, Buffer.SINE);
-	}
-	
-	public static Timbre getTimbre() {
-		int resolution = 10000;
-		int harmonics = Math.min(1000, resolution/4/20);
-		// decay envelope on harmonics:
-		double nToThe = -2.7;
-		// sinusoidal envelope on harmonics:
-		double nthHarmonicIsMinimum = 2;
-		double minimumHarmonicRatio = .6;
-		double rangeHalf = (1.0 - minimumHarmonicRatio)/2.0;
-		double rangeCenter = 1.0 - rangeHalf;
-		// add noisy neighbors:
-		double neighborDist = .05;
-		double neighborRatio = .15;
-		
-		Buffer buffer = new Buffer(resolution);
-		{
-			for (int i=0; i<resolution; i++) {
-				float value = 0;
-				for (int j=1; j<harmonics+1; j++) {
-					double harmonic = Math.sin(i*2*Math.PI/resolution*j);
-					double upperNeighborRatio = j*(1+neighborDist);
-					double lowerNeighborRatio = j*(1-neighborDist);
-					double harmonicUpperNeighbor = Math.sin(i*2*Math.PI/resolution*upperNeighborRatio);
-					double harmonicLowerNeighbor = Math.sin(i*2*Math.PI/resolution*lowerNeighborRatio);
-					double decayEnv = Math.pow(j, nToThe);
-					double sinusoidalEnv = rangeCenter+rangeHalf*Math.cos((j-1.2)*Math.PI/nthHarmonicIsMinimum);
-//					double sinusoidalEnv2 = Math.cos(rangeCenter+rangeHalf*Math.cos((j-1.2)*Math.PI/nthHarmonicIsMinimum/2.0));
-					double envFinal = decayEnv 
-							* sinusoidalEnv 
-//									* sinusoidalEnv2
-							;
-					value += harmonic * envFinal
-							+ harmonicUpperNeighbor * envFinal * neighborRatio
-							+ harmonicLowerNeighbor * envFinal * neighborRatio
-							;
-				}
-				buffer.buf[i] = value;
-			}
-		}
-		return new Timbre(120, buffer);
-	}
-	
-	public static Timbre getVoiceTimbre() {
-		int resolution = 10000;
-		int harmonics = Math.min(1000, resolution/4/20);
-		// decay envelope on harmonics:
-		double nToThe = -2.3;
-		// sinusoidal envelope on harmonics:
-		double nthHarmonicIsMinimum = 6;
-		double minimumHarmonicRatio = .6;
-		double rangeHalf = (1.0 - minimumHarmonicRatio)/2.0;
-		double rangeCenter = 1.0 - rangeHalf;
-		// add noisy neighbors:
-		double neighborDist = .07;
-		double neighborRatio = .7;
-		
-		Buffer buffer = new Buffer(resolution);
-		{
-			for (int i=0; i<resolution; i++) {
-				float value = 0;
-				for (int j=1; j<harmonics+1; j++) {
-					double harmonic = Math.sin(i*2*Math.PI/resolution*j);
-					double upperNeighborRatio = j*(1+neighborDist);
-					double lowerNeighborRatio = j*(1-neighborDist);
-					double harmonicUpperNeighbor = Math.sin(i*2*Math.PI/resolution*upperNeighborRatio);
-					double harmonicLowerNeighbor = Math.sin(i*2*Math.PI/resolution*lowerNeighborRatio);
-					double decayEnv = Math.pow(j, nToThe);
-					double sinusoidalEnv = rangeCenter+rangeHalf*Math.cos((j-1)*Math.PI/nthHarmonicIsMinimum);
-					double sinusoidalEnv2 = Math.cos(rangeCenter+rangeHalf*Math.cos((j-1)*Math.PI/nthHarmonicIsMinimum/3.0));
-					double envFinal = decayEnv 
-									* sinusoidalEnv 
-									* sinusoidalEnv2
-									;
-					value += harmonic * envFinal
-						   + harmonicUpperNeighbor * envFinal * neighborRatio
-						   + harmonicLowerNeighbor * envFinal * neighborRatio
-						   ;
-				}
-				buffer.buf[i] = value;
-			}
-		}
-		return new Timbre(200, buffer);
-	}
-
 	public static float random(double x) {
 		return (float)(Math.random() * x);
 	}
@@ -298,17 +211,6 @@ public class BeadRunner {
 		List<String> inputs = new ArrayList<>(userInputs);
 		empty = true;
 		return inputs;
-	}
-	
-	public static class Timbre {
-		int peakMillis;
-		Buffer waveform;
-		public Timbre(int attackTimeMillis, Buffer waveform) {
-			this.peakMillis = attackTimeMillis;
-			this.waveform = waveform;
-		}
-		public int getPeakMillis() { return peakMillis; }
-		public Buffer getWaveform() { return waveform; }
 	}
 	
 	public static class InputThread extends Thread {

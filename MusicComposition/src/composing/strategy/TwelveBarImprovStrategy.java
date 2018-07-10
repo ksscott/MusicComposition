@@ -4,12 +4,13 @@ import static composing.RandomUtil.random;
 import static composing.RandomUtil.roll;
 
 import composing.IncompleteComposition;
-import instrument.Instrument;
+import main.BeadsTimbre;
+import performance.Dynamic;
+import performance.MidiNote;
+import performance.instrument.Instrument;
 import theory.Accidental;
-import theory.Dynamic;
 import theory.Key;
 import theory.Measure;
-import theory.MidiNote;
 import theory.Note;
 import theory.Scale;
 
@@ -33,7 +34,7 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 	
 	public TwelveBarImprovStrategy(Note tonic) {
 		super(tonic);
-		this.trumpet = new Instrument("Trumpet");
+		this.trumpet = new Instrument("Trumpet", BeadsTimbre.getSineTimbre());
 		noteIndex = 100; // will be random
 	}
 	
