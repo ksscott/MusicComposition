@@ -8,8 +8,10 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Scanner;
+import java.util.Set;
 
 import composing.Composer;
+import instrument.Instrument;
 import net.beadsproject.beads.core.AudioContext;
 import net.beadsproject.beads.core.Bead;
 import net.beadsproject.beads.data.Buffer;
@@ -113,18 +115,28 @@ public class BeadRunner {
 						double beatValue = measure.beatValue();
 						double time = (double) countThisMeasure*beatValue/((double) c.getTicksPerBeat());
 						double lastTime = (double) (countThisMeasure-1)*beatValue/((double) c.getTicksPerBeat());
+						float millisPerBeat = c.getIntervalUGen().getValue();
+						double millisPerWholeNote = millisPerBeat / beatValue; // (millis / beat) / (whole-notes / beat)
 						
 						// play notes
 //						List<MidiNote> notes = measure.getNotes(time); // misses times in between beats
-						List<MidiNote> notes = measure.getNotes(lastTime, time);
-						if (!notes.isEmpty())
-							System.out.print(String.format("Beat %.2f: ", time / beatValue + 1));
+						for (Instrument instrument : measure.getInstruments()) {
+							List<MidiNote> notes = measure.getNotes(instrument, lastTime, time);
+							if (!notes.isEmpty()) {
+								System.out.print(String.format("Beat %.2f: ", time/beatValue + 1));
+								playNotes(instrument, notes, millisPerWholeNote);
+								System.out.println();
+							}
+						}
+							
+							
+					}
+					private void playNotes(Instrument instrument, List<MidiNote> notes, double millisPerWholeNote) {
 						for (MidiNote note : notes) {
 							pitch = note.getPitch();
 							System.out.print(pitch + " ");
 							float freq = Pitch.mtof(pitch);
-							float millisPerBeat = c.getIntervalUGen().getValue();
-							int duration = (int) (millisPerBeat * note.getDuration() / beatValue);
+							int durationMillis = (int) (millisPerWholeNote * note.getDuration()); // (millis / whole-note) * whole-notes
 							float volume = (float) volume(note.getDynamic());
 							Gain g;
 							
@@ -146,7 +158,7 @@ public class BeadRunner {
 							}
 							if (!note.tiesOver()) {
 								// add note end:
-								((Envelope)g.getGainUGen()).addSegment(0, duration, new KillTrigger(g));
+								((Envelope)g.getGainUGen()).addSegment(0, durationMillis, new KillTrigger(g));
 							}
 							else {
 								// prepare tie to next note
@@ -154,47 +166,6 @@ public class BeadRunner {
 							}
 								
 						}
-						if (!notes.isEmpty())
-							System.out.println();
-						
-						
-//						// tutorial
-//						Clock c = (Clock)message;
-//						if(c.isBeat()) {
-//							//choose some nice frequencies
-//							if(random(1) < 0.5) return;
-//							pitch = Pitch.forceToScale((int)random(12), Pitch.dorian);
-//							float freq = Pitch.mtof(pitch + (int)random(5) * 12 + 32);
-//							WavePlayer wp = new WavePlayer(ac, freq, Buffer.SINE);
-//							Gain g = new Gain(ac, 1, new Envelope(ac, 0));
-//							g.addInput(wp);
-//							ac.out.addInput(g);
-//							((Envelope)g.getGainUGen()).addSegment(0.1f, random(200));
-//							((Envelope)g.getGainUGen()).addSegment(0, random(7000), new KillTrigger(g));
-//						}
-//						if(c.getCount() % 4 == 0) {
-//							//choose some nice frequencies
-//							int pitchAlt = pitch;
-//							if(random(1) < 0.2) pitchAlt = Pitch.forceToScale((int)random(12), Pitch.dorian) + (int)random(2) * 12;
-//							float freq = Pitch.mtof(pitchAlt + 32);
-//							WavePlayer wp = new WavePlayer(ac, freq, Buffer.SQUARE);
-//							Gain g = new Gain(ac, 1, new Envelope(ac, 0));
-//							g.addInput(wp);
-//							Panner p = new Panner(ac, random(1));
-//							p.addInput(g);
-//							ac.out.addInput(p);
-//							((Envelope)g.getGainUGen()).addSegment(random(0.1), random(50));
-//							((Envelope)g.getGainUGen()).addSegment(0, random(400), new KillTrigger(p));
-//						}
-//						if(c.getCount() % 4 == 0) {
-//							Noise n = new Noise(ac);
-//							Gain g = new Gain(ac, 1, new Envelope(ac, 0.05f));
-//							g.addInput(n);
-//							Panner p = new Panner(ac, random(0.5) + 0.5f);
-//							p.addInput(g);
-//							ac.out.addInput(p);
-//							((Envelope)g.getGainUGen()).addSegment(0, random(100), new KillTrigger(p));
-//						}
 					}
 				};
 		clock.addMessageListener(bead);

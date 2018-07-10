@@ -27,8 +27,9 @@ public class PrettyMelodyWriter implements MelodyWriter {
 		if (measures.isEmpty())
 			return new Phrase();
 		
-		Set<MidiPitch> allPitchesInAllMeasures = measures.stream()
-				.flatMap(measure -> measure.getNotes(0, measure.beats()*measure.beatValue()).stream())
+		Set<MidiPitch> allPitchesInAllMeasures = measures.stream().flatMap(
+					  measure -> measure.getInstruments().stream().flatMap(
+						 inst -> measure.getNotes(inst, 0, measure.length()).stream()))
 				.map(MidiNote::getPitch)
 				.map(MidiPitch::new)
 				.collect(Collectors.toSet());
@@ -43,13 +44,14 @@ public class PrettyMelodyWriter implements MelodyWriter {
 		if (measures.isEmpty())
 			return phrase;
 		
-		Set<MidiPitch> allPitchesInAllMeasures = measures.stream()
-				.flatMap(measure -> measure.getNotes(0, measure.beats()*measure.beatValue()).stream())
+		Set<MidiPitch> allPitchesInAllMeasures = measures.stream().flatMap(
+				measure -> measure.getInstruments().stream().flatMap(
+				   inst -> measure.getNotes(inst, 0, measure.length()).stream()))
 				.map(MidiNote::getPitch)
 				.map(MidiPitch::new)
 				.collect(Collectors.toSet());
 		
-		Optional<Integer> highest = allPitchesInAllMeasures.stream().map(MidiPitch::get).reduce((a,b) -> a < b ? b : a);
+		int highest = allPitchesInAllMeasures.stream().map(MidiPitch::get).reduce((a,b) -> a < b ? b : a).orElse(60);
 		
 		int ornamentChance = 33;
 		int appoggiaturaChance = 70; // = (ornamentChance * XX)% 
@@ -63,7 +65,7 @@ public class PrettyMelodyWriter implements MelodyWriter {
 			Note startingNote = key.note(random(key.getScale().intervals().length) + 1);
 			MidiPitch startingPitch = new MidiPitch(startingNote, 1);
 			int halfStepsBelowHighest = risingMelody ? 5 : 0;
-			while (startingPitch.get() < highest.get() - halfStepsBelowHighest)
+			while (startingPitch.get() < highest - halfStepsBelowHighest)
 				startingPitch = startingPitch.above(12);
 			
 			for (int i=0; i<measure.beats(); i++) {

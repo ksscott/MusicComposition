@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 import composing.IncompleteComposition;
 import composing.writer.PrettyMelodyWriter;
+import instrument.Instrument;
 import theory.Chord;
 import theory.ChordProgressions;
 import theory.ChordProgressions.ChordProgression;
@@ -42,12 +43,17 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 	protected Key key;
 	protected Tempo currentTempo;
 	
+	protected Instrument piano;
+	protected Instrument solo;
+	
 	protected ChordSpec firstChord;
 	
 	public PrettyProgressionStrategy(Key key) {
 		this.melodyWriter = new PrettyMelodyWriter();
 		this.key = key;
 		this.currentTempo = Tempo.ADAGIETTO;
+		this.piano = new Instrument("Piano");
+		this.solo = new Instrument("Solo?");
 		firstChord = key.chordSpec(1);
 	}
 	
@@ -274,7 +280,8 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 			// FIXME must find a much better way than this to get the last chord
 			// probably by abstracting a high-level Measure class and also adding multiple voices
 //			System.out.println("Last measure empty? " + meas.isEmpty());
-			List<MidiNote> lastBeatNotes = lastMeasure.getNotes(lastMeasure.beatValue()*(lastMeasure.beats()-1));
+			double lastBeat = lastMeasure.beatValue()*(lastMeasure.beats()-1);
+			List<MidiNote> lastBeatNotes = lastMeasure.getNotes(piano, lastBeat);
 			// debugging evidence:
 //			[Measure 1] (CM) 55__ 53__ 52ap 50__ melody
 //			Beat 1.00: 48 52 55 55 
@@ -294,10 +301,10 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 //			System.out.println("Last beat notes: ");
 //			for (MidiNote note : lastBeatNotes)
 //				System.out.println(note);
-			previousChord = new Chord();
-			for (MidiNote note : lastBeatNotes) {
-				previousChord.add(new MidiPitch(note.getPitch()));
-			}
+			previousChord = new Chord(lastBeatNotes.stream()
+												   .map(MidiNote::getPitch)
+												   .map(MidiPitch::new)
+												   .collect(Collectors.toList()));
 		}
 		Measure measure = backgroundChord(previousChord, nextChordSpec);
 //		if (lastMeasure != null && roll(30))
@@ -323,25 +330,18 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 //			System.out.println(pitch);
 		
 		Measure measure = new Measure(4, 1/4.0);
+		measure.addInstrument(piano);
 		
-		Chord previousChordHacked = new Chord(); // gross hack, awaiting "instrument" parts
-		for (int i=0; i<3; i++)
-			previousChordHacked.add(previousChord.get().get(i));
-		//		System.out.println("scaleDegree: " + scaleDegree);
-//		System.out.println("Tonic: " + MidiPitch.inOctave(key.getTonic(), 4));
-//		ChordSpec nextChordSpec = key.chordSpec(scaleDegree, octave); // FIXME not necessarily the tonic
 		int bassMin = MidiPitch.inOctave(key.getTonic(), octave);
 		int bassMax = bassMin + 19;
-		Chord voiceLeadChord = ChordProgressions.voiceLead(previousChordHacked, nextChordSpec, bassMin, bassMax);
+		Chord voiceLeadChord = ChordProgressions.voiceLead(previousChord, nextChordSpec, bassMin, bassMax);
 		
 		for (int i=0; i<measure.beats(); i++) {
-//			for (MidiPitch pitch : key.chord(scaleDegree, octave).get()) {
 			for (MidiPitch pitch : voiceLeadChord) {
-//				System.out.println("Adding pitch: " + pitch);
 				MidiNote note = new MidiNote(pitch, measure.beatValue());
 				if (i != 0)
 					note.setDynamic(Dynamic.below(note.getDynamic()));
-				measure.add(note, i*measure.beatValue());
+				measure.add(piano, note, i*measure.beatValue());
 			}
 		}
 		
@@ -349,15 +349,18 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 	}
 	
 	@SuppressWarnings("unused")
-	private void tieMeasures(Measure lastMeasure, Measure nextMeasure) {
-		List<MidiNote> lastNotes = lastMeasure.getNotes(lastMeasure.beatValue()*(lastMeasure.beats()-1));
-		List<MidiNote> firstNotes = nextMeasure.getNotes(0.0); // hard coded
+	private void tieMeasures(Measure lastMeasure, Measure nextMeasure, Instrument instrument) {
+		List<MidiNote> lastNotes = lastMeasure.getNotes(instrument, lastMeasure.beatValue()*(lastMeasure.beats()-1));
+		List<MidiNote> firstNotes = nextMeasure.getNotes(instrument, 0.0); // hard coded :(
+		if (lastNotes.size() != firstNotes.size())
+			System.out.println("Warning! Tied measure has unequal numbers of notes for instrument "
+					+ instrument + " " + lastNotes.size() + " -> " + firstNotes.size());
 		Comparator<MidiNote> noteSorter = new Comparator<MidiNote>() {
 			@Override public int compare(MidiNote o1, MidiNote o2) { return o1.getPitch() - o2.getPitch(); }
 		};
 		Collections.sort(lastNotes, noteSorter);
 		Collections.sort(firstNotes, noteSorter);
-		for (int i=0; i<3; i++) { // hard coded number of notes :(
+		for (int i=0; i<lastNotes.size(); i++) {
 			MidiNote last = lastNotes.get(i);
 			MidiNote next = firstNotes.get(i);
 			MidiNote.tieOver(last, next);
@@ -366,13 +369,15 @@ public class PrettyProgressionStrategy implements ComposingStrategy {
 	
 	private void writeMelody(List<Measure> measuresWithoutMelody) {
 		Phrase melody = melodyWriter.writeMelody(measuresWithoutMelody);
-		Measure.writeOnto(melody, measuresWithoutMelody, 0.0);
+		measuresWithoutMelody.forEach(measure -> measure.addInstrument(solo));
+		Measure.writeOnto(solo, melody, measuresWithoutMelody, 0.0);
 		measuresWithoutMelody.forEach(measure -> measure.setMetaInfo(measure.getMetaInfo() + " melody"));
 	}
 
 	private void writeMelody(List<Measure> measuresWithoutMelody, Key key) {
 		Phrase melody = melodyWriter.writeMelody(measuresWithoutMelody, key);
-		Measure.writeOnto(melody, measuresWithoutMelody, 0.0);
+		measuresWithoutMelody.forEach(measure -> measure.addInstrument(solo));
+		Measure.writeOnto(solo, melody, measuresWithoutMelody, 0.0);
 		measuresWithoutMelody.forEach(measure -> measure.setMetaInfo(measure.getMetaInfo() + " melody"));
 	}
 

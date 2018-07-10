@@ -1,8 +1,10 @@
 package composing.strategy;
 
-import static composing.RandomUtil.*;
+import static composing.RandomUtil.random;
+import static composing.RandomUtil.roll;
 
 import composing.IncompleteComposition;
+import instrument.Instrument;
 import theory.Accidental;
 import theory.Dynamic;
 import theory.Key;
@@ -15,6 +17,8 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 
 	private int octavesUp = 2;
 	private int[] pitches;
+	
+	private Instrument trumpet;
 	
 	private int noteIndex; // hack
 	
@@ -29,6 +33,7 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 	
 	public TwelveBarImprovStrategy(Note tonic) {
 		super(tonic);
+		this.trumpet = new Instrument("Trumpet");
 		noteIndex = 100; // will be random
 	}
 	
@@ -45,6 +50,7 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 	protected Measure composeBar(IncompleteComposition composition) {
 		int bar = getCurrentBar(composition);
 		Measure measure = super.composeBar(composition);
+		measure.addInstrument(trumpet);
 		
 		if (bar == 11 && roll(25)) 
 			return composeBarTwelve(measure);
@@ -85,14 +91,14 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 				// play on downbeat
 				final MidiNote note = new MidiNote(pitches[noteIndex], 2/3.0*beatValue);
 				note.setDynamic(Dynamic.MEZZO_PIANO);
-				measure.add(note, i*beatValue);
+				measure.add(trumpet, note, i*beatValue);
 				noteIndex += step();
 				noteIndex = (noteIndex + pitches.length) % pitches.length;
 			}
 			if (roll(offBeatChance)) {
 				// play synchopation
 				final double location = i*beatValue + 2/3.0*beatValue;
-				measure.add(new MidiNote(pitches[noteIndex], 1/3.0*beatValue), location);
+				measure.add(trumpet, new MidiNote(pitches[noteIndex], 1/3.0*beatValue), location);
 				noteIndex += step();
 				noteIndex = (noteIndex + pitches.length) % pitches.length;
 			}
@@ -106,11 +112,11 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 		for (int i=0; i<measure.beats(); i++) {
 			if (i != 0) {
 				MidiNote note = new MidiNote(tonic.get() + octavesUp*12 + 7, 1/3.0*beatValue);
-				measure.add(note, i*beatValue);
+				measure.add(trumpet, note, i*beatValue);
 			}
 			MidiNote note = new MidiNote(tonic.get() + octavesUp*12 + 7, 1/3.0*beatValue);
 			final double location = i*beatValue + 2/3.0*beatValue;
-			measure.add(note, location);
+			measure.add(trumpet, note, location);
 		}
 		return measure;
 	}

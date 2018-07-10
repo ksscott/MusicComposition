@@ -3,11 +3,14 @@ package theory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import instrument.Instrument;
 import theory.analysis.Phrase;
 
 public class Measure {
@@ -21,12 +24,12 @@ public class Measure {
 	
 	private String metaInfo = "";
 	
-	private Map<Double,List<MidiNote>> notes;
+	private Set<InstrumentMeasure> instruments;
 	
 	public Measure(int beats, double beatValue) {
 		this.beats = beats;
 		this.beatValue = beatValue;
-		this.notes = new HashMap<>();
+		this.instruments = new HashSet<>();
 	}
 	
 	/** @return number of beats in this measure */
@@ -44,6 +47,31 @@ public class Measure {
 
 	public String getMetaInfo() { return new String(metaInfo); }
 	public void setMetaInfo(String info) { this.metaInfo = info; }
+	
+	public Set<Instrument> getInstruments() {
+		return instruments.stream().map(InstrumentMeasure::getInstrument).collect(Collectors.toSet());
+	}
+	
+	public void addInstrument(Instrument instrument) {
+		instruments.add(new InstrumentMeasure(instrument));
+	}
+	
+	public void removeInstrument(Instrument removed) {
+		instruments.removeIf(inst -> inst.getInstrument().equals(removed));
+	}
+	
+	public List<MidiNote> getNotes(Instrument instrument, double time) {
+		return getInstrument(instrument).getNotes(time);
+	}
+
+	/**
+	 * @param time start, exclusive
+	 * @param time end, inclusive
+	 * @return notes in a range
+	 */
+	public List<MidiNote> getNotes(Instrument instrument, double start, double end) {
+		return getInstrument(instrument).getNotes(start, end);
+	}
 
 	/**
 	 * Intended to add a note at the latest silence in this measure
@@ -51,79 +79,53 @@ public class Measure {
 	 * @param note
 	 * @return this measure
 	 */
-	public Measure add(MidiNote note) {
-		return add(note, latestNoteEnd());
-	}
-	
-	public Measure add(MidiNote note, double offset) {
-		if (offset < 0)
-			throw new IllegalArgumentException("Cannot add notes before start of measure.");
-		if (offset + note.getDuration() > beats * beatValue)
-			throw new IllegalArgumentException("Note would end after end of measure.");
-		
-		List<MidiNote> list = notes.get(new Double(offset));
-		if (list == null) {
-			list = new ArrayList<>();
-			notes.put(new Double(offset), list);
-		}
-		list.add(note);
+	public Measure add(Instrument instrument, MidiNote note) {
+		getInstrument(instrument).add(note);
 		return this;
 	}
 	
-	public Measure add(Phrase phrase) {
-		return add(phrase, latestNoteEnd());
-	}
-	
-	public Measure add(Phrase phrase, double offset) {
-		if (offset + phrase.getStart() < 0)
-			throw new IllegalArgumentException("No part of the phrase can start before the start of the measure.");
-		if (offset + phrase.getEnd() > beats * beatValue)
-			throw new IllegalArgumentException("Phrase would end after end of measure.");
-		
-		Map<Double, List<MidiNote>> phraseNotes = phrase.getNotes();
-		for (Double time : phraseNotes.keySet())
-			for (MidiNote note : phraseNotes.get(time))
-				add(note, offset + time);
-		
+	public Measure add(Instrument instrument, MidiNote note, double offset) {
+		getInstrument(instrument).add(note, offset);
 		return this;
 	}
 	
-	public List<MidiNote> getNotes(double time) {
-		List<MidiNote> list = notes.get(new Double(time));
-		return list == null ? new ArrayList<>() : new ArrayList<>(list);
+	// TODO add a remove(MidiNote) method?
+	
+	public Measure add(Instrument instrument, Phrase phrase) {
+		getInstrument(instrument).add(phrase);
+		return this;
 	}
 	
-	/**
-	 * @param time start, exclusive
-	 * @param time end, inclusive
-	 * @return notes in a range
-	 */
-	public List<MidiNote> getNotes(double start, double end) {
-		List<MidiNote> allNotes = new ArrayList<>();
-		Set<Double> keySet = notes.keySet();
-		for (Double dub : keySet) {
-			if ((dub > start && dub <= end) || dub == end)
-				allNotes.addAll(notes.get(dub));
-		}
-		return allNotes;
+	public Measure add(Instrument instrument, Phrase phrase, double offset) {
+		getInstrument(instrument).add(phrase, offset);
+		return this;
 	}
+	
+	// TODO add a remove(Phrase) method?
 	
 	public Set<Double> getTimes() {
-		return notes.keySet();
+		Set<Double> retval = new HashSet<>();
+		for (InstrumentMeasure instrument : instruments)
+			retval.addAll(instrument.getTimes());
+		return retval;
 	}
 	
 	public boolean isEmpty() {
-		return notes.keySet().isEmpty();
+		for (InstrumentMeasure instrument : instruments)
+			if (!instrument.isEmpty())
+				return false;
+		return true;
 	}
 	
 	public void absorb(Measure other) {
-		if (other.beats() != beats() || other.beatValue() != beatValue())
-			throw new IllegalArgumentException("Cannot absorb a measure with a different key signature.");
-		notes.putAll(other.notes);
-		setMetaInfo(metaInfo + "\n" + other.getMetaInfo());
+		for (InstrumentMeasure im : other.instruments) {
+			Instrument otherInstrument = im.getInstrument();
+			if (!this.getInstruments().contains(otherInstrument))
+				this.addInstrument(otherInstrument);
+			getInstrument(otherInstrument).absorb(im);
+		}
 	}
 	
-	// can't remember what this was used for...
 //	public String timesAndNotes() {
 //		String measureString = "";
 //		Map<Double, List<MidiNote>> measureNotes = notes;
@@ -141,7 +143,7 @@ public class Measure {
 //		return measureString;
 //	}
 	
-	public static void writeOnto(Phrase phrase, List<Measure> measures, double offset) { // FIXME honor the offset
+	public static void writeOnto(Instrument instrument, Phrase phrase, List<Measure> measures, double offset) { // FIXME honor the offset
 		if (offset + phrase.getStart() < 0)
 			throw new IllegalArgumentException("Phrase would start before start of measures.");
 		Optional<Double> totalLength = measures.stream().map(Measure::length).reduce((a, b) -> a+b);
@@ -171,7 +173,7 @@ public class Measure {
 //			if (notes.size() > 1)
 //				throw new IllegalStateException("bug!");
 			for (MidiNote note : notes) {
-				measure.add(note, location);
+				measure.add(instrument, note, location);
 //				if (location == 0)
 //					System.out.println("downbeat" + note.getPitch() + " ");
 			}
@@ -180,15 +182,109 @@ public class Measure {
 		}
 //		System.out.println();
 	}
-
-	private double latestNoteEnd() {
-		double latest = 0;
-		for (Double dub : notes.keySet()) {
-			for (MidiNote note : notes.get(dub)) {
-				latest = Math.max(latest, dub + note.getDuration());
-			}
-		}
-		return latest;
+	
+	private InstrumentMeasure getInstrument(Instrument instrument) {
+		return instruments.stream().filter(inst -> inst.getInstrument().equals(instrument)).
+				findAny().orElseThrow(() -> new RuntimeException("Instrument not present: " + instrument));
 	}
+	
+//	private double latestNoteEnd() {
+//		return instruments.stream().mapToDouble(InstrumentMeasure::latestNoteEnd).max().orElse(0.0);
+//	}
+	
+	// TODO support multiple voices of the same instrument
+	private class InstrumentMeasure {
+		
+		private Instrument instrument;
+		private Map<Double,List<MidiNote>> notes;
+		
+		public InstrumentMeasure(Instrument instrument) {
+			this.instrument = instrument;
+			this.notes = new HashMap<>();
+		}
+		
+		public Instrument getInstrument() {
+			return instrument;
+		}
+		
+		// are these necessary?
+		public int beats() { return Measure.this.beats(); }
+		public double beatValue() { return Measure.this.beatValue(); }
+		public double length() { return Measure.this.length(); }
+		
+		public List<MidiNote> getNotes(double time) {
+			List<MidiNote> list = notes.get(new Double(time));
+			return list == null ? new ArrayList<>() : new ArrayList<>(list);
+		}
+		
+		public List<MidiNote> getNotes(double start, double end) {
+			List<MidiNote> allNotes = new ArrayList<>();
+			Set<Double> keySet = notes.keySet();
+			for (Double dub : keySet) {
+				if ((dub > start && dub <= end) || dub == end)
+					allNotes.addAll(notes.get(dub));
+			}
+			// TODO sort?
+			return allNotes;
+		}
+		
+		public void add(MidiNote note) {
+			add(note, latestNoteEnd());
+		}
+		
+		public void add(MidiNote note, double offset) {
+			if (offset < 0)
+				throw new IllegalArgumentException("Cannot add notes before start of measure.");
+			if (offset + note.getDuration() > beats * beatValue)
+				throw new IllegalArgumentException("Note would end after end of measure.");
+			
+			List<MidiNote> list = notes.get(new Double(offset));
+			if (list == null) {
+				list = new ArrayList<>();
+				notes.put(new Double(offset), list);
+			}
+			list.add(note);
+		}
+		
+		public void add(Phrase phrase) {
+			add(phrase, latestNoteEnd());
+		}
+		
+		public void add(Phrase phrase, double offset) {
+			if (offset + phrase.getStart() < 0)
+				throw new IllegalArgumentException("No part of the phrase can start before the start of the measure.");
+			if (offset + phrase.getEnd() > beats * beatValue)
+				throw new IllegalArgumentException("Phrase would end after end of measure.");
 
+			Map<Double, List<MidiNote>> phraseNotes = phrase.getNotes();
+			for (Double time : phraseNotes.keySet())
+				for (MidiNote note : phraseNotes.get(time))
+					add(note, offset + time);
+		}
+		
+		public Set<Double> getTimes() {
+			return notes.keySet();
+		}
+		
+		public boolean isEmpty() {
+			return notes.keySet().isEmpty();
+		}
+		
+		public void absorb(InstrumentMeasure other) {
+			if (other.beats() != beats() || other.beatValue() != beatValue())
+				throw new IllegalArgumentException("Cannot absorb a measure with a different key signature.");
+			notes.putAll(other.notes);
+//			setMetaInfo(metaInfo + "\n" + other.getMetaInfo());
+		}
+		
+		private double latestNoteEnd() {
+			double latest = 0;
+			for (Double dub : notes.keySet()) {
+				for (MidiNote note : notes.get(dub)) {
+					latest = Math.max(latest, dub + note.getDuration());
+				}
+			}
+			return latest;
+		}
+	}
 }

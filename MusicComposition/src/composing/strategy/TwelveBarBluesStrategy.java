@@ -3,6 +3,7 @@ package composing.strategy;
 import java.util.Queue;
 
 import composing.IncompleteComposition;
+import instrument.Instrument;
 import theory.Measure;
 import theory.MidiNote;
 import theory.MidiPitch;
@@ -16,9 +17,12 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 	protected MidiPitch tonic;
 	private int[] chordsHalfSteps = new int[] { 0, 0, 0, 0, 5, 5, 0, 0, 7, 5, 0, 0 };
 	private Scale baseline = new ScaleImpl(new int[] { 0, 4, 7, 9, 10 });
+	
+	private Instrument bass;
 
 	public TwelveBarBluesStrategy(Note tonic) {
 		this.tonic = new MidiPitch(tonic, 3);
+		this.bass = new Instrument("Bass");
 	}
 	
 	@Override
@@ -72,8 +76,9 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 		int beats = 4;
 		double beatValue = 1/4.0;
 		Measure measure = new Measure(beats, beatValue);
+		measure.addInstrument(bass);
 		for (int i=0; i<beats; i++)
-			measure.add(new MidiNote(baseline.intervals()[i] + root, beatValue));
+			measure.add(bass, new MidiNote(baseline.intervals()[i] + root, beatValue));
 		return measure;
 	}
 
@@ -81,8 +86,9 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 		int beats = 4;
 		double beatValue = 1/4.0;
 		Measure measure = new Measure(beats, beatValue);
+		measure.addInstrument(bass);
 		for (int i=0; i<beats; i++)
-			measure.add(new MidiNote(baseline.intervals()[4-i] + root, beatValue));
+			measure.add(bass, new MidiNote(baseline.intervals()[4-i] + root, beatValue));
 		return measure;
 	}
 	
