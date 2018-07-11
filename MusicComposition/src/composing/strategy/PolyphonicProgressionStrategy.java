@@ -27,7 +27,7 @@ public class PolyphonicProgressionStrategy extends ChordsSectionWriter {
 	
 	public PolyphonicProgressionStrategy(Key key) {
 		super(key);
-		this.tempo = Tempo.ALLEGRO;
+		this.tempo = Tempo.ANDANTE;
 		this.voices = new ArrayList<>();
 		voices.add(Instrument.SOPRANO_VOICE);
 		voices.add(Instrument.ALTO_VOICE);
@@ -56,7 +56,7 @@ public class PolyphonicProgressionStrategy extends ChordsSectionWriter {
 	protected Measure composeBar(Measure lastMeasure, ChordSpec nextChordSpec) {
 		// TODO significant work is required to do anything other than play one chord per bar
 		// first off, the analysis has assigned exactly one chordspec to each bar
-		Measure measure = new Measure(2, 1/2.0);
+		Measure measure = new Measure(4, 1/4.0);
 		
 		List<MidiNote> lastNotes = new ArrayList<>();
 		
@@ -88,7 +88,7 @@ public class PolyphonicProgressionStrategy extends ChordsSectionWriter {
 		
 		int index = 0;
 		for (MidiPitch pitch : nextChord) { // assume sorted
-			MidiNote nextNote = new MidiNote(pitch, measure.beatValue());
+			MidiNote nextNote = new MidiNote(pitch, measure.length());
 			if (lastMeasure != null) {
 				MidiNote.tieOver(lastNotes.get(index), nextNote); // assume sorted
 				heldNotes.put(voices.get(index), lastNotes.get(index));
@@ -97,6 +97,9 @@ public class PolyphonicProgressionStrategy extends ChordsSectionWriter {
 			}
 			measure.add(voices.get(index++), nextNote);
 		}
+		
+		measure.setBpm(tempo.getBpm());
+		
 		return measure;
 	}
 
