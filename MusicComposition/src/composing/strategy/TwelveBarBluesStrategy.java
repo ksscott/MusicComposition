@@ -3,7 +3,6 @@ package composing.strategy;
 import java.util.Queue;
 
 import composing.IncompleteComposition;
-import main.BeadsTimbre;
 import performance.MidiNote;
 import performance.Tempo;
 import performance.instrument.Instrument;
@@ -23,7 +22,7 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 
 	public TwelveBarBluesStrategy(Note tonic) {
 		this.tonic = new MidiPitch(tonic, 3);
-		this.bass = new Instrument("Bass", BeadsTimbre.getInstrumentTimbre());
+		this.bass = Instrument.BASS;
 	}
 	
 	@Override

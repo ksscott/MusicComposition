@@ -34,7 +34,7 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 	
 	public TwelveBarImprovStrategy(Note tonic) {
 		super(tonic);
-		this.trumpet = new Instrument("Trumpet", BeadsTimbre.getSineTimbre());
+		this.trumpet = Instrument.TRUMPET;
 		noteIndex = 100; // will be random
 	}
 	
