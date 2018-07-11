@@ -53,8 +53,18 @@ public class MidiNote {
 		return tiesOver;
 	}
 	
+	/** discouraged, use #tieOver */
+	public void setTiesOver(boolean ties) {
+		tiesOver = ties;
+	}
+	
 	public static void tieOver(MidiNote from, MidiNote to) {
 		from.tiesOver = true;
 		to.tiedFromPitch = from.pitch;
+	}
+	
+	@Override
+	public String toString() {
+		return "MidiNote[" + pitch + "," + duration + "]";
 	}
 }

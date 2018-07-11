@@ -8,7 +8,6 @@ import static composing.writer.Ornament.trill;
 import static composing.writer.Ornament.upperMordent;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 

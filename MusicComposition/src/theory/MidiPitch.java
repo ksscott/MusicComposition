@@ -1,6 +1,6 @@
 package theory;
 
-public class MidiPitch implements Comparable<MidiPitch> {
+public class MidiPitch implements Cloneable,Comparable<MidiPitch> {
 
 	private int pitch;
 	
@@ -57,6 +57,11 @@ public class MidiPitch implements Comparable<MidiPitch> {
 		if (octave < 0 || octave > 8)
 			throw new IllegalArgumentException("Only octaves 0-8 are currently supported");
 		return 12 + (12 * octave) + new Note(Letter.C, Accidental.NONE).halfStepsTo(note);
+	}
+	
+	@Override
+	public MidiPitch clone() {
+		return new MidiPitch(pitch);
 	}
 
 	@Override
