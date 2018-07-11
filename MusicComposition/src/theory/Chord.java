@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Effectively a sorted set of {@link MidiPitch}
+ */
 public class Chord implements Iterable<MidiPitch> {
 	
 	private Set<MidiPitch> pitches;

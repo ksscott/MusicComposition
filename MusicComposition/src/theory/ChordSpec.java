@@ -5,6 +5,11 @@ import java.util.Map;
 
 import static theory.ChordSpec.Degree.*;
 
+/**
+ * Intended to function like a chord name, such as "BbMm7"
+ * <p>
+ * WARNING: Implementation is incomplete
+ */
 public class ChordSpec {
 	
 	private Note tonic;

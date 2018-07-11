@@ -21,14 +21,26 @@ public class Note implements Cloneable, Comparable<Note> {
 		this(indexOf(letter, accidental));
 	}
 	
+	/**
+	 * @param other note assumed to be above this note
+	 * @return the number of half steps the given note is above this note
+	 */
 	public int halfStepsTo(Note other) {
 		return modPos(other.index - index, 12);
 	}
 	
+	/**
+	 * @param steps half steps above this note, all integers supported (come on, be reasonable!)
+	 * @return note reached by raising this note the given number of half steps
+	 */
 	public Note halfStepsAbove(int steps) {
 		return new Note(modPos(index + steps, 12));
 	}
 	
+	/**
+	 * @param other note to test for equivalence
+	 * @return true if the given note is harmonically equivalent to this note (e.g. Ab & G# or E## & Gb)
+	 */
 	public boolean isEnharmonic(Note other) {
 		return other.index == this.index;
 	}

@@ -6,8 +6,6 @@ import static composing.RandomUtil.modPos;
 
 /**
  * The seven rotations of the diatonic scale
- * 
- * @author kennethscott
  */
 public enum Mode implements Scale {
 

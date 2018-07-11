@@ -17,6 +17,12 @@ import java.util.stream.Collectors;
 import theory.ChordSpec.Degree;
 import theory.ChordSpec.Quality;
 
+/**
+ * A {@code Key} has a root {@link Note} (tonic) and a scale 
+ * which is assumed to repeat infinitely above and below.
+ * <p>
+ * WARNING: Currently does not support scales that do not repeat identically every octave
+ */
 public class Key implements Cloneable {
 	
 	public static final Scale MAJOR = IONIAN;

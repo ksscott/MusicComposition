@@ -2,20 +2,31 @@ package theory;
 
 import java.util.Arrays;
 
-public class ScaleImpl implements Scale {
+/**
+ * Usable implementation of a {@link Scale}
+ */
+public class ScaleImpl implements Scale,Cloneable {
 
 	protected String name;
 	protected int[] intervals;
 	
+	/**
+	 * @param intervals must be an array of a positive number of positive integers
+	 */
 	public ScaleImpl(int[] intervals) {
 		this(intervals, "");
 	}
 	
+	/**
+	 * @param intervals must be an array of a positive number of positive integers
+	 * @param name a name for this scale
+	 */
 	public ScaleImpl(int[] intervals, String name) {
 		this.name = name;
 		this.intervals = intervals;
 	}
 	
+	/** Creates a copy of the given scale, to the extent that {@link Scale} is aware. */
 	public ScaleImpl(Scale other) {
 		this.name = other.name();
 		this.intervals = other.intervals();
@@ -42,6 +53,11 @@ public class ScaleImpl implements Scale {
 			name = "[" + name.trim() + "]";
 		}
 		return name;
+	}
+	
+	@Override
+	public ScaleImpl clone() {
+		return new ScaleImpl(this);
 	}
 
 	@Override

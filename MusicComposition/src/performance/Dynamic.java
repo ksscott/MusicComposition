@@ -23,14 +23,17 @@ public class Dynamic {
 		return new Dynamic(other.value);
 	}
 	
+	/** @return the dynamic immediately louder than this one */
 	public static Dynamic above(Dynamic other) {
 		return new Dynamic(other.value + 1);
 	}
 	
+	/** @return the dynamic immediately quieter than this one */
 	public static Dynamic below(Dynamic other) {
 		return new Dynamic(other.value - 1);
 	}
 	
+	/** e.g. "mf" or "pp" */
 	public String notation() {
 		String retval = "<dynamic>";
 

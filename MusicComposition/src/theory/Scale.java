@@ -43,9 +43,7 @@ public interface Scale {
 		return retval;
 	}
 	
-	/**
-	 * @return octave size in half steps
-	 */
+	/** @return octave size in half steps */
 	public default int getWidth() {
 		int width = 0;
 		for (int interval : intervals())
@@ -53,6 +51,7 @@ public interface Scale {
 		return width;
 	}
 	
+	/** @return what it says on the tin; go read up on music theory! */
 	public default boolean isDiatonic() {
 		int[] intervals = intervals();
 		int length = intervals.length;
