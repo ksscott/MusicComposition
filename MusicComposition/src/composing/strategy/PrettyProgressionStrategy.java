@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 
 import composing.IncompleteComposition;
 import composing.writer.PrettyMelodyWriter;
-import main.BeadsTimbre;
 import performance.Dynamic;
 import performance.MidiNote;
 import performance.Tempo;

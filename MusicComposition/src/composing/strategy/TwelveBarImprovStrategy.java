@@ -4,7 +4,6 @@ import static composing.RandomUtil.random;
 import static composing.RandomUtil.roll;
 
 import composing.IncompleteComposition;
-import main.BeadsTimbre;
 import performance.Dynamic;
 import performance.MidiNote;
 import performance.instrument.Instrument;
