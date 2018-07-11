@@ -2,6 +2,7 @@ package theory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -14,7 +15,7 @@ import performance.MidiNote;
 import performance.instrument.Instrument;
 import theory.analysis.Phrase;
 
-public class Measure {
+public class Measure implements Comparable<Measure> {
 	
 	// time signature:
 	private int beats;
@@ -144,6 +145,66 @@ public class Measure {
 //		return measureString;
 //	}
 	
+	public String stringDrawing() {
+		// this implementation is kinda gross
+		String drawing = "";
+		List<String> partStrings = new ArrayList<>();
+		List<Instrument> instList = instruments.stream().map(InstrumentMeasure::getInstrument)
+											   .sorted().collect(Collectors.toList());
+		int widestInstrumentName = 0;
+		for (Instrument instrument : instList) {
+			String title = instrument.toString() + ":";
+			partStrings.add(title);
+			widestInstrumentName = Math.max(title.length(), widestInstrumentName);
+		}
+		for (int i=0; i<partStrings.size(); i++) {
+			String temp = partStrings.get(i);
+			int diff = widestInstrumentName - temp.length();
+			for (int j=0; j<diff; j++)
+				temp += " ";
+			partStrings.set(i, temp);
+		}
+		
+		List<Double> times = new ArrayList<>(getTimes());
+		Collections.sort(times);
+		
+		for (Instrument instrument : instList) {
+			String instString = partStrings.get(instList.indexOf(instrument));
+			Map<Double,List<MidiNote>> playedTimes = new HashMap<>();
+			int maxSimulNotes = times.stream()
+									 // shh, you saw nothing. this is how streams were meant to be used:
+									 .peek(time -> playedTimes.put(time, getNotes(instrument, time)))
+									 .peek(time -> Collections.sort(playedTimes.get(time), new Comparator<MidiNote>() {
+										@Override public int compare(MidiNote o1, MidiNote o2) {
+											return o2.getPitch() - o1.getPitch(); // flipped, highest on top
+										}}))
+									 .map(time -> getNotes(instrument, time))
+									 .mapToInt(List::size)
+									 .max()
+									 .orElse(0);
+			for (int row=0; row<maxSimulNotes; row++) {
+				if (row > 0)
+					for (int i=0; i<widestInstrumentName; i++)
+						instString += " ";
+				for (double time : times) {
+					List<MidiNote> notes = playedTimes.get(time);
+					if (row > notes.size() - 1) {
+						instString += "   "; // TODO this assumes all 2-digit pitches
+						continue;
+					}
+					instString += " " + notes.get(row).getPitch();
+				}
+				instString += System.lineSeparator();
+			}
+			drawing += instString;
+		}
+		
+		// mushes all measures together, no break between:
+		drawing = drawing.substring(0,drawing.length()-System.lineSeparator().length());
+		
+		return drawing;
+	}
+	
 	public static void writeOnto(Instrument instrument, Phrase phrase, List<Measure> measures, double offset) { // FIXME honor the offset
 		if (offset + phrase.getStart() < 0)
 			throw new IllegalArgumentException("Phrase would start before start of measures.");
@@ -193,6 +254,11 @@ public class Measure {
 //		return instruments.stream().mapToDouble(InstrumentMeasure::latestNoteEnd).max().orElse(0.0);
 //	}
 	
+	@Override
+	public int compareTo(Measure o) {
+		return measureNumber - o.measureNumber; // what could go wrong
+	}
+
 	// TODO support multiple voices of the same instrument
 	private class InstrumentMeasure {
 		
@@ -211,21 +277,29 @@ public class Measure {
 		// are these necessary?
 		public int beats() { return Measure.this.beats(); }
 		public double beatValue() { return Measure.this.beatValue(); }
-		public double length() { return Measure.this.length(); }
+//		public double length() { return Measure.this.length(); }
 		
 		public List<MidiNote> getNotes(double time) {
 			List<MidiNote> list = notes.get(new Double(time));
 			return list == null ? new ArrayList<>() : new ArrayList<>(list);
 		}
 		
+		/**
+		 * @param start first time to return played notes (inclusive)
+		 * @param end last time to return played notes (exclusive)
+		 * @return all notes played in the given time window, sorted by time played
+		 */
 		public List<MidiNote> getNotes(double start, double end) {
 			List<MidiNote> allNotes = new ArrayList<>();
-			Set<Double> keySet = notes.keySet();
+			List<Double> keySet = new ArrayList<>(notes.keySet());
+			Collections.sort(keySet);
+//			System.out.println("Key set size: " + keySet.size());
 			for (Double dub : keySet) {
-				if ((dub > start && dub <= end) || dub == end)
+				if ((dub >= start && dub < end) || dub == start)
 					allNotes.addAll(notes.get(dub));
 			}
 			// TODO sort?
+//			System.out.println("All notes found for " + instrument + ": " + allNotes.size());
 			return allNotes;
 		}
 		
@@ -239,12 +313,15 @@ public class Measure {
 			if (offset + note.getDuration() > beats * beatValue)
 				throw new IllegalArgumentException("Note would end after end of measure.");
 			
+//			System.out.println("Adding note to " + instrument);
+			
 			List<MidiNote> list = notes.get(new Double(offset));
 			if (list == null) {
 				list = new ArrayList<>();
 				notes.put(new Double(offset), list);
 			}
 			list.add(note);
+//			System.out.println("Now has " + list.size() + " notes");
 		}
 		
 		public void add(Phrase phrase) {
