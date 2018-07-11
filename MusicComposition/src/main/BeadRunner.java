@@ -2,13 +2,13 @@ package main;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Scanner;
-import java.util.Set;
 
 import composing.Composer;
 import net.beadsproject.beads.core.AudioContext;
@@ -23,7 +23,6 @@ import net.beadsproject.beads.ugens.Gain;
 import net.beadsproject.beads.ugens.WavePlayer;
 import performance.Dynamic;
 import performance.MidiNote;
-import performance.Timbre;
 import performance.instrument.Instrument;
 import theory.Measure;
 
@@ -33,13 +32,13 @@ public class BeadRunner {
 	private static boolean empty = true;
 	private static final List<String> STOP_COMMANDS = Arrays.asList(new String[] { "stop", "end", "quit", "kill" });
 	
-	private static Map<Integer,Gain> heldNotes;
+	private static HeldNotesManager heldNotes;
 
 	public static void main(String[] args) {
 		InputThread inputThread = new InputThread();
 		inputThread.start();
 		
-		heldNotes = new HashMap<>();
+		heldNotes = new HeldNotesManager();
 		final AudioContext ac;
 
 		ac = new AudioContext();
@@ -76,8 +75,8 @@ public class BeadRunner {
 								composer.finishComposing();
 								clock.kill();
 								ac.out.kill();
+//								System.exit(0); // best termination solution? Beads seems obstinate
 								return;
-//								System.exit(0); // best termination solution?
 							}
 							Measure onTheFlyMeasure = composer.receiveInput(input);
 							if (onTheFlyMeasure != null)
@@ -100,6 +99,7 @@ public class BeadRunner {
 								int millisPerSec = (int) (60000 / measure.getBpm());
 								c.getIntervalUGen().setValue(millisPerSec);
 								System.out.println("[Measure " + measure.getMeasureNumber() + "] " + measure.getMetaInfo());
+								System.out.println(measure.stringDrawing());
 								startOfMeasure = beat;
 							}
 //							System.out.println("Time: " + time);
@@ -111,23 +111,35 @@ public class BeadRunner {
 //						int beats = measure.beats();
 						double beatValue = measure.beatValue();
 						double time = (double) countThisMeasure*beatValue/((double) c.getTicksPerBeat());
-						double lastTime = (double) (countThisMeasure-1)*beatValue/((double) c.getTicksPerBeat());
+						double nextTime = (double) (countThisMeasure+1)*beatValue/((double) c.getTicksPerBeat());
 						float millisPerBeat = c.getIntervalUGen().getValue();
 						double millisPerWholeNote = millisPerBeat / beatValue; // (millis / beat) / (whole-notes / beat)
 						
 						// play notes
-//						List<MidiNote> notes = measure.getNotes(time); // misses times in between beats
+						boolean playedAnyNotes = false;
 						for (Instrument instrument : measure.getInstruments()) {
-							List<MidiNote> notes = measure.getNotes(instrument, lastTime, time);
+							List<MidiNote> notes = measure.getNotes(instrument, time, nextTime);
 							if (!notes.isEmpty()) {
-								System.out.print(String.format("Beat %.2f: ", time/beatValue + 1));
+//								if (!playedAnyNotes) // for old note printing method
+//									System.out.print(String.format("Beat %.2f: ", time/beatValue + 1));
+								playedAnyNotes = true;
 								playNotes(instrument, notes, millisPerWholeNote);
-								System.out.println();
 							}
 						}
-							
-							
+//						if (playedAnyNotes) // for old note printing method
+//							System.out.println();
+
+						// CLEANUP:
+						if (playedAnyNotes) {
+							Collection<Gain> obsolete = heldNotes.endAcquisitionPhase();
+							for (Gain old : obsolete) {
+								((Envelope) old.getGainUGen()).addSegment(0, 1, new KillTrigger(old));
+//								System.out.println("Cleaning obsolete note");
+							}
+						}
 					}
+							
+							
 					private void playNotes(Instrument instrument, List<MidiNote> notes, double millisPerWholeNote) {
 						BeadsTimbre timbre = (BeadsTimbre) instrument.getTimbre(); // FIXME true for now
 						int attackTime = timbre.getPeakMillis();
@@ -135,7 +147,7 @@ public class BeadRunner {
 						
 						for (MidiNote note : notes) {
 							pitch = note.getPitch();
-							System.out.print(pitch + " ");
+//							System.out.print(pitch + " "); // for old note printing method
 							float freq = Pitch.mtof(pitch);
 							int durationMillis = (int) (millisPerWholeNote * note.getDuration()); // (millis / whole-note) * whole-notes
 							float volume = (float) volume(note.getDynamic());
@@ -143,11 +155,10 @@ public class BeadRunner {
 							
 							int tiedFrom = note.getTiedFromPitch();
 							if (tiedFrom != 0) {
-								g = heldNotes.get(tiedFrom);
+								g = heldNotes.acquire(instrument, tiedFrom);
 								WavePlayer tiedWp = (WavePlayer) g.getConnectedInputs().iterator().next();
 								tiedWp.setFrequency(freq);
 //								tiedWp.addInput(arg0);
-								heldNotes.remove(tiedFrom);
 							} else {
 								// start note:
 								g = new Gain(ac, 1, new Envelope(ac, 0));
@@ -160,12 +171,10 @@ public class BeadRunner {
 							if (!note.tiesOver()) {
 								// add note end:
 								((Envelope)g.getGainUGen()).addSegment(0, durationMillis, new KillTrigger(g));
-							}
-							else {
+							} else {
 								// prepare tie to next note
-								heldNotes.put(pitch, g);
+								heldNotes.register(instrument, pitch, g);
 							}
-								
 						}
 					}
 				};
@@ -211,6 +220,78 @@ public class BeadRunner {
 		List<String> inputs = new ArrayList<>(userInputs);
 		empty = true;
 		return inputs;
+	}
+	
+	/**
+	 * Allows multiple notes to change at once, possibly acquiring each other's notes. After every round of 
+	 * simultaneous note changes, only one instance of each note is allowed to be held per {@link Instrument}.
+	 * 
+	 * <p> Call {@link #register(Instrument, Integer, Gain) register} to begin holding a note.
+	 * <p> Call {@link #acquire(Instrument, Integer)} to take over ownership of a held note, which will no longer be tracked
+	 * <p> Be sure to call {@link #endAcquisitionPhase()} after every round of simultaneous note changes.
+	 * The map returned contains obsolete held notes which will no longer be tracked. 
+	 * Be sure to do any necessary cleanup on these notes.
+	 */
+	private static class HeldNotesManager {
+		
+		private Map<Instrument,Map<Integer,Gain>> previousHeldNotes;
+		private Map<Instrument,Map<Integer,Gain>> nextHeldNotes;
+		
+		public HeldNotesManager() {
+			this.previousHeldNotes = new HashMap<>();
+			this.nextHeldNotes = new HashMap<>();
+		}
+		
+		/**
+		 * @param instrument
+		 * @param note the note to be held
+		 * @param gain the gain which produces the held note
+		 */
+		public void register(Instrument instrument, Integer note, Gain gain) {
+			if (!nextHeldNotes.containsKey(instrument))
+				nextHeldNotes.put(instrument, new HashMap<>());
+			nextHeldNotes.get(instrument).put(note, gain);
+		}
+		
+		/**
+		 * @param instrument
+		 * @param note the pitch to acquire
+		 * @return the associated gain, which will be removed from the list of held pitches
+		 */
+		public Gain acquire(Instrument instrument, Integer note) {
+			Map<Integer, Gain> notes = previousHeldNotes.get(instrument);
+			return notes == null ? null : notes.remove(note);
+		}
+		
+		/**
+		 * Call this method at the end of a round of simultaneous note changes.
+		 * 
+		 * @return obsolete collection of previously held notes which will now be forgotten 
+		 * by this manager forever; the consumer should be sure to clean them up as necessary.
+		 */
+		public Collection<Gain> endAcquisitionPhase() {
+			// XXX THIS NEEDS TO BE REVISED
+			// probably it needs to take into account the original length of the note
+			List<Gain> forgotten = new ArrayList<>();
+			
+			Map<Instrument,Map<Integer,Gain>> obsolete = previousHeldNotes;
+			boolean notEmpty = !nextHeldNotes.isEmpty();
+			// carry over any notes that have not been stepped on
+			for (Instrument instrument : obsolete.keySet()) {
+				Map<Integer, Gain> oldInstNoteMap = obsolete.get(instrument);
+				for (Integer note : oldInstNoteMap.keySet()) {
+					if (notEmpty && (nextHeldNotes.get(instrument) == null || 
+							!nextHeldNotes.get(instrument).containsKey(note)))
+						register(instrument, note, oldInstNoteMap.remove(note));
+					else
+						forgotten.add(oldInstNoteMap.get(note));
+				}
+			}
+			previousHeldNotes = nextHeldNotes;
+			nextHeldNotes = new HashMap<>();
+			
+			return forgotten;
+		}
 	}
 	
 	public static class InputThread extends Thread {
