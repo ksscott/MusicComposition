@@ -33,18 +33,17 @@ public class ChordProgressions {
 	 * @return
 	 */
 	public static Chord voiceLead(Chord lastChord, ChordSpec nextChordSpec, int bassMin, int bassMax) {
-//		System.out.println("Voice leading from chord: " + lastChord);
 		Chord retval = new Chord();
-		
-		List<MidiPitch> lastChordPitches = lastChord.get();
-		MidiPitch previousBassPitch = lastChordPitches.get(0);
 		
 		Chord nextChord = nextChordSpec.build();
 //		System.out.println("Voice leading to pitches: ");
 //		for (MidiPitch pitch : nextChord.get())
 //			System.out.println(pitch);
-		if (nextChord.isEmpty())
+		if (lastChord.isEmpty() || nextChord.isEmpty())
 			return retval;
+		List<MidiPitch> lastChordPitches = lastChord.get();
+		MidiPitch previousBassPitch = lastChordPitches.get(0);
+		
 		Note bassNote = Key.toFlatNote(nextChord.get().get(0));
 		
 		// decide which way to take the bass note
@@ -60,7 +59,7 @@ public class ChordProgressions {
 		for (MidiPitch pitch : lastChordPitches.subList(1, lastChordPitches.size())) {
 			// for remaining pitches, attempt to step downward
 			boolean found = false;
-			for (int i=pitch.get()-4; i<pitch.get()+12; i++) {
+			for (int i=pitch.get()-4; i<=pitch.get()+12; i++) {
 				if (i <= lastPitchAdded)
 					continue;
 				
@@ -71,7 +70,6 @@ public class ChordProgressions {
 					}
 				}
 				if (found) {
-//					System.out.println("Voice leading pitch " + pitch.get() + " to pitch: " + i);
 					retval.add(new MidiPitch(i));
 					lastPitchAdded = i;
 					break;
@@ -84,9 +82,75 @@ public class ChordProgressions {
 		return retval;
 	}
 	
-	
+	public static Chord voiceLeadPolyphony(Chord lastChord, ChordSpec nextChordSpec, int bassMin, int bassMax) {
+//		if (true) // temporary
+//			return voiceLead(lastChord, nextChordSpec, bassMin, bassMax);
+		Chord retval = new Chord();
+		
+		Chord nextChord = nextChordSpec.build();
+		List<MidiPitch> nonCommons = new ArrayList<>(); // collection of non-common pitches
+		// assign common pitches:
+		for (MidiPitch pitch : lastChord) {
+			boolean found = false;
+			for (MidiPitch acceptable : nextChord) {
+				if (modPos(acceptable.halfStepsTo(pitch), 12) == 0) {
+					retval.add(pitch.clone());
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				nonCommons.add(pitch);
+		}
+		int lastChordCenter = (int) lastChord.get().stream().mapToInt(MidiPitch::get).average().orElse(0);
+		
+		for (MidiPitch pitch : nonCommons) {
+			// attempt to stay as close to the original pitch as possible
+			// favor moving toward center
+			int towardCenter = lastChordCenter > pitch.get() ? 1 : -1;
+			int awayFromCenter = -towardCenter;
+			boolean found = false;
+			for (int i=1; i<=12; i++) {
+				MidiPitch toward = pitch.above(i*towardCenter);
+				if (!retval.contains(toward)) { // have it already?
+					for (MidiPitch acceptable : nextChord) { // in next chord?
+						if (modPos(acceptable.halfStepsTo(toward),12) == 0) {
+							retval.add(toward);
+							found = true;
+							break;
+						}
+					}
+					if (found) break;
+				}
+				MidiPitch away = pitch.above(i*awayFromCenter);
+				if (!retval.contains(away)) { // have it already?
+					for (MidiPitch acceptable : nextChord) { // in next chord?
+						if (modPos(acceptable.halfStepsTo(away),12) == 0) {
+							retval.add(away);
+							found = true;
+							break;
+						}
+					}
+					if (found) break;
+				}
+			}
+			if (!found)
+				throw new IllegalArgumentException("Could not find a pitch to voice lead to!");
+		}
+		
+		return retval;
+	}
 	
 	public static KeyChordProgression standardMajorProgression(Note tonic) {
+		return majorProgression(tonic, true);
+	}
+	
+	public static KeyChordProgression polyphonicMajorProgression(Note tonic) {
+		return majorProgression(tonic, false);
+	}
+	
+	// TODO "secondsAndSevenths" is a crude, temporary hack
+	private static KeyChordProgression majorProgression(Note tonic, boolean secondsAndSevenths) {
 		KeyChordProgression progression = new KeyChordProgression(new Key(tonic, Key.MAJOR));
 		ChordSpec five = progression.getKey().chordSpec(5);
 		five.setDegree(Degree.SEVENTH);
@@ -101,23 +165,28 @@ public class ChordProgressions {
 		progression.put(3,1);
 		progression.put(3,6);
 //		progression.put(4,5,4);
-		progression.put(progression.getKey().chordSpec(4),five,4);
+		if (secondsAndSevenths)
+			progression.put(progression.getKey().chordSpec(4),five,4);
 		progression.put(4,6);
-		progression.put(4,3);
+		if (secondsAndSevenths)
+			progression.put(4,3);
 		progression.put(4,2);
 //		progressions.put(4,1); // XXX debugging only
 //		progression.put(5,1,3);
 		progression.put(five,progression.getKey().chordSpec(1),3);
 //		progression.put(5,6);
-		progression.put(five,progression.getKey().chordSpec(6));
+		if (secondsAndSevenths)
+			progression.put(five,progression.getKey().chordSpec(6));
 //		progression.put(5,4);
-		progression.put(five,progression.getKey().chordSpec(4));
+		if (secondsAndSevenths)
+			progression.put(five,progression.getKey().chordSpec(4));
 		progression.put(6,4,2);
 		progression.put(6,2,2);
 		progression.put(6,1);
 //		progression.put(7,5);
 		progression.put(progression.getKey().chordSpec(7),five);
-		progression.put(7,1);
+		if (secondsAndSevenths)
+			progression.put(7,1);
 		return progression;
 	}
 	

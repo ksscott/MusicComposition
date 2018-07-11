@@ -10,6 +10,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import composing.strategy.ComposingStrategy;
+import composing.strategy.PolyphonicProgressionStrategy;
 import composing.strategy.PrettyProgressionStrategy;
 import composing.strategy.TwelveBarImprovStrategy;
 import theory.Accidental;
@@ -28,6 +29,7 @@ public class Composer {
 	private List<ComposingStrategy> oldTricks = Arrays.asList(new ComposingStrategy[] { 
 					new TwelveBarImprovStrategy(new Note(Letter.C)),
 					new PrettyProgressionStrategy(new Key(new Note(Letter.C, Accidental.NONE), Key.MAJOR)),
+					new PolyphonicProgressionStrategy(new Key(new Note(Letter.C, Accidental.NONE), Key.MAJOR)),
 			});
 	
 	/**
