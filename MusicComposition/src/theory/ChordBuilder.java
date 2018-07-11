@@ -39,7 +39,7 @@ public class ChordBuilder {
 			int halfStepsAboveRoot = 0;
 			int stepsAboveRoot = chordNote.scaleDegree - 1;
 			int octavesAbove = 0;
-			while (stepsAboveRoot > degrees) {
+			while (stepsAboveRoot >= degrees) {
 				// cut off whole octaves
 				stepsAboveRoot -= degrees;
 				octavesAbove++;
