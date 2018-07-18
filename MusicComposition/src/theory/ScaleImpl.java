@@ -26,7 +26,7 @@ public class ScaleImpl implements Scale,Cloneable {
 		if (intervals.length == 0)
 			throw new IllegalArgumentException("Scale must have some number of intervals");
 		for (int interval : intervals)
-			if (interval <= 0)
+			if (interval < 0)
 				throw new IllegalArgumentException("Scale intervals must be positive");
 		this.intervals = intervals;
 	}
