@@ -23,13 +23,17 @@ public class ScaleImpl implements Scale,Cloneable {
 	 */
 	public ScaleImpl(int[] intervals, String name) {
 		this.name = name;
+		if (intervals.length == 0)
+			throw new IllegalArgumentException("Scale must have some number of intervals");
+		for (int interval : intervals)
+			if (interval <= 0)
+				throw new IllegalArgumentException("Scale intervals must be positive");
 		this.intervals = intervals;
 	}
 	
 	/** Creates a copy of the given scale, to the extent that {@link Scale} is aware. */
 	public ScaleImpl(Scale other) {
-		this.name = other.name();
-		this.intervals = other.intervals();
+		this(other.intervals(), other.name());
 	}
 	
 	@Override
