@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,12 +33,17 @@ public class Key implements Cloneable {
 	public static final Scale STANDARD_PENTATONIC	 = new ScaleImpl(new int[]{2,2,3,2,3},		"Pentatonic");
 	public static final Scale BLUES_SCALE			 = new ScaleImpl(new int[]{3,2,1,1,3,2},	"Blues");
 	
+	// TODO should tonic,scale be replaced with a set of notes? perhaps in a supertype?
+	
 	private Note tonic;
 	private ScaleImpl scale;
 	
 	public Key(Note tonic, Scale scale) {
 		this.tonic = tonic;
 		this.scale = new ScaleImpl(scale);
+		if (modPos(12, scale.getWidth()) != 0)
+			throw new RuntimeException("WARNING: Key not guaranteed to function properly "
+									+ "in all cases if scale does not repeat every octave.");
 	}
 	
 	public Note getTonic() {
@@ -121,6 +127,62 @@ public class Key implements Cloneable {
 		return tonic.halfStepsAbove(steps);
 	}
 	
+	// unsure if this is the best method signature
+	public Chord chord(int scaleDegree, int octave) {
+		return chord(scaleDegree, Degree.NONE, octave);
+	}
+	
+	public Chord chord(int scaleDegree, Degree chordDegree, int octave) {
+		Chord chord = new Chord();
+		
+		int[] intervals = scale.intervals();
+		int length = intervals.length;
+		if (scaleDegree < 1 || scaleDegree > length)
+			throw new IllegalArgumentException();
+			
+		int numThirdsAbove = 2 + chordDegree.ordinal(); // how many times to add a third above the root
+		
+		int pitch = MidiPitch.inOctave(note(scaleDegree), octave);
+		chord.add(new MidiPitch(pitch));
+//		System.out.println("pitch " + pitch);
+		
+		for (int i=0; i<numThirdsAbove; i++) {
+			for (int j=0; j<2; j++) {
+				pitch += intervals[modPos((2*i+j+scaleDegree-1), length)];
+			}
+			chord.add(new MidiPitch(pitch));
+//			System.out.println("pitch " + pitch);
+		}
+		
+		return chord;
+	}
+	
+	public ChordSpec chordSpec(int scaleDegree) {
+		return new ChordSpec(note(scaleDegree), chordQuality(chord(scaleDegree, 1))); // any octave
+	}
+	
+	public Key relativeKey() {
+		if (scale.equals(MAJOR))
+			return new Key(tonic.halfStepsAbove(-3), MINOR);
+		if (scale.equals(MINOR))
+			return new Key(tonic.halfStepsAbove(3), MAJOR);
+		throw new UnsupportedOperationException("Getting the relative key is only supported for the MAJOR and MINOR modes.");
+	}
+	
+	public Key parallelKey() {
+		if (scale.equals(MAJOR))
+			return new Key(tonic, MINOR);
+		if (scale.equals(MINOR))
+			return new Key(tonic, MAJOR);
+		throw new UnsupportedOperationException("Getting the parallel key is only supported for the MAJOR and MINOR modes.");
+	}
+	
+	public Key tonicize(int scaleDegree) {
+		if (!scale.isDiatonic())
+			throw new UnsupportedOperationException("Operation currently only supported for diatonic scales");
+		return new Key(note(scaleDegree), Mode.equivalent(scale).revolve(scaleDegree - 1));
+	}
+	
 	/**
 	 * Gives {@link Accidental#FLAT flat} versions of notes.
 	 * <br> (TODO general implementation requires much more context)
@@ -178,10 +240,10 @@ public class Key implements Cloneable {
 		if (pitches.size() < 3)
 			throw new IllegalArgumentException("Must have at least 3 pitches to infer a diatonic key.");
 		List<Integer> integers = pitches.stream()
-									   .map(MidiPitch::get)
-									   .map(integer -> integer % 12)
-									   .sorted()
-									   .collect(Collectors.toList());
+										.map(MidiPitch::get)
+										.map(integer -> integer % 12)
+										.sorted()
+										.collect(Collectors.toList());
 		// from here on, the list must represent a set of at least three integers from 0-11
 		List<Integer> faScale = Arrays.stream(LYDIAN.intervalsFromRoot()).boxed().collect(Collectors.toList());
 		List<Integer> tiScale = Arrays.stream(LOCRIAN.intervalsFromRoot()).boxed().collect(Collectors.toList());
@@ -260,7 +322,57 @@ public class Key implements Cloneable {
 		}
 		return key;
 	}
+
+	// semi-redundant, but useful
+	public static Set<Note> possibleIonianTonics(Set<Note> playedNotes) {
+		// assume all is possible to start
+		Set<Note> possible = new HashSet<>();
+		Note a = new Note(Letter.A);
+		for (int i=0; i<12; i++) {
+			possible.add(a.halfStepsAbove(i));
+		}
 	
+		// mask out keys obviated by each note
+		List<int[]> chromatic = Arrays.asList(new int[]{1,3,6,8,10});
+		for (Note played : playedNotes) {
+			possible.removeIf(possibleTonic -> chromatic.contains(possibleTonic.halfStepsTo(played)));
+		}
+	
+		return possible;
+	}
+	
+	/**
+	 * This method returns the maximum set of notes that can be played 
+	 * while still implying all of the given keys.
+	 */
+	public static Set<Note> playableNotes(Set<Key> impliedKeys) {
+		Set<Note> playable = new HashSet<>();
+		Note a = new Note(Letter.A);
+		for (int i=0; i<12; i++) {
+			playable.add(a.halfStepsAbove(i));
+		}
+		for (Key key : impliedKeys)
+			playable.removeIf(note -> !key.contains(note));
+		return playable;
+	}
+	
+	public static Key KeySuperposition(Set<Key> impliedKeys, Note tonic) {
+		Set<Note> playable = playableNotes(impliedKeys);
+		if (!playable.contains(tonic))
+			throw new IllegalArgumentException("Not possible, you dummy!");
+		List<Integer> intervals = new ArrayList<>();
+		for (Note note : playable)
+			intervals.add(tonic.halfStepsTo(note));
+		Collections.sort(intervals);
+		Integer lastIntervalFromRoot = 0;
+		for (Integer interval : intervals) {
+			interval -= lastIntervalFromRoot;
+			lastIntervalFromRoot += interval;
+		}
+		int[] intArray = intervals.stream().mapToInt(i -> i).toArray();
+		return new Key(tonic, new ScaleImpl(intArray));
+	}
+
 	public static Quality chordQuality(Chord chord) {
 		List<MidiPitch> pitches = chord.get();
 		if (pitches.size() != 3)
@@ -309,63 +421,7 @@ public class Key implements Cloneable {
 		}
 		return quality;
 	}
-	
-	// unsure if this is the best method signature
-	public Chord chord(int scaleDegree, int octave) {
-		return chord(scaleDegree, Degree.NONE, octave);
-	}
-	
-	public Chord chord(int scaleDegree, Degree chordDegree, int octave) {
-		Chord chord = new Chord();
-		
-		int[] intervals = scale.intervals();
-		int length = intervals.length;
-		if (scaleDegree < 1 || scaleDegree > length)
-			throw new IllegalArgumentException();
-			
-		int numThirdsAbove = 2 + chordDegree.ordinal(); // how many times to add a third above the root
-		
-		int pitch = MidiPitch.inOctave(note(scaleDegree), octave);
-		chord.add(new MidiPitch(pitch));
-//		System.out.println("pitch " + pitch);
-		
-		for (int i=0; i<numThirdsAbove; i++) {
-			for (int j=0; j<2; j++) {
-				pitch += intervals[modPos((2*i+j+scaleDegree-1), length)];
-			}
-			chord.add(new MidiPitch(pitch));
-//			System.out.println("pitch " + pitch);
-		}
-		
-		return chord;
-	}
-	
-	public ChordSpec chordSpec(int scaleDegree) {
-		return new ChordSpec(note(scaleDegree), chordQuality(chord(scaleDegree, 1))); // any octave
-	}
-	
-	public Key relativeKey() {
-		if (scale.equals(MAJOR))
-			return new Key(tonic.halfStepsAbove(-3), MINOR);
-		if (scale.equals(MINOR))
-			return new Key(tonic.halfStepsAbove(3), MAJOR);
-		throw new UnsupportedOperationException("Getting the relative key is only supported for the MAJOR and MINOR modes.");
-	}
-	
-	public Key parallelKey() {
-		if (scale.equals(MAJOR))
-			return new Key(tonic, MINOR);
-		if (scale.equals(MINOR))
-			return new Key(tonic, MAJOR);
-		throw new UnsupportedOperationException("Getting the parallel key is only supported for the MAJOR and MINOR modes.");
-	}
-	
-	public Key tonicize(int scaleDegree) {
-		if (!scale.isDiatonic())
-			throw new UnsupportedOperationException("Operation currently only supported for diatonic scales");
-		return new Key(note(scaleDegree), Mode.equivalent(scale).revolve(scaleDegree - 1));
-	}
-	
+
 	@Override
 	public Key clone() {
 		return new Key(tonic.clone(), new ScaleImpl(scale));
