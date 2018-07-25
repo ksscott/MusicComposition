@@ -16,10 +16,6 @@ import performance.MidiNote;
 import performance.Tempo;
 import performance.instrument.Instrument;
 import theory.Chord;
-import theory.ChordProgressions;
-import theory.ChordProgressions.ChordProgression;
-import theory.ChordProgressions.KeyChange;
-import theory.ChordProgressions.KeyChordProgression;
 import theory.ChordSpec;
 import theory.Key;
 import theory.Measure;
@@ -27,6 +23,11 @@ import theory.MidiPitch;
 import theory.analysis.Analysis;
 import theory.analysis.Phrase;
 import theory.analysis.Section;
+import theory.progression.ChordProgressions;
+import theory.progression.ChordProgressions.ChordProgression;
+import theory.progression.ChordProgressions.KeyChange;
+import theory.progression.ChordProgressions.KeyChordProgression;
+import theory.progression.VoiceLeading;
 
 /**
  * Yes, it's messy. Leave me alone.
@@ -178,7 +179,7 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		
 		int bassMin = MidiPitch.inOctave(key.getTonic(), octave);
 		int bassMax = bassMin + 19;
-		Chord voiceLeadChord = ChordProgressions.voiceLead(previousChord, nextChordSpec, bassMin, bassMax);
+		Chord voiceLeadChord = VoiceLeading.voiceLead(previousChord, nextChordSpec, bassMin, bassMax);
 		
 		for (int i=0; i<measure.beats(); i++) {
 			for (MidiPitch pitch : voiceLeadChord) {

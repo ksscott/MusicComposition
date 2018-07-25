@@ -9,17 +9,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import composing.IncompleteComposition;
-import theory.ChordProgressions;
 import theory.ChordSpec;
 import theory.Key;
 import theory.Measure;
-import theory.ChordProgressions.ChordProgression;
-import theory.ChordProgressions.KeyChange;
-import theory.ChordProgressions.KeyChordProgression;
 import theory.analysis.Analysis;
 import theory.analysis.Section;
+import theory.progression.ChordProgressions;
+import theory.progression.ChordProgressions.ChordProgression;
+import theory.progression.ChordProgressions.KeyChange;
+import theory.progression.ChordProgressions.KeyChordProgression;
 
-abstract class ChordsSectionWriter implements ComposingStrategy {
+public abstract class ChordsSectionWriter implements ComposingStrategy {
 		
 		protected Key key;
 		protected ChordSpec firstChord;

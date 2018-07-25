@@ -11,13 +11,14 @@ import performance.MidiNote;
 import performance.Tempo;
 import performance.instrument.Instrument;
 import theory.Chord;
-import theory.ChordProgressions;
-import theory.ChordProgressions.ChordProgression;
 import theory.ChordSpec;
 import theory.Key;
 import theory.Measure;
 import theory.MidiPitch;
 import theory.analysis.Analysis;
+import theory.progression.ChordProgressions;
+import theory.progression.ChordProgressions.ChordProgression;
+import theory.progression.VoiceLeading;
 
 public class PolyphonicProgressionStrategy extends ChordsSectionWriter {
 
@@ -83,8 +84,8 @@ public class PolyphonicProgressionStrategy extends ChordsSectionWriter {
 											 .collect(Collectors.toList()));
 		
 		// FIXME This needs to be changed. This voice leading is not suitable for good polyphonic motion.
-		Chord nextChord = ChordProgressions.voiceLeadPolyphony(lastChord, nextChordSpec, 
-				MidiPitch.inOctave(key.getTonic(), 2), MidiPitch.inOctave(key.getTonic(), 5));
+		Chord nextChord = VoiceLeading.voiceLeadPolyphony(lastChord, nextChordSpec, 
+				MidiPitch.inOctave(key.getTonic(), 2), MidiPitch.inOctave(key.getTonic(), 4));
 		
 		int index = 0;
 		for (MidiPitch pitch : nextChord) { // assume sorted
