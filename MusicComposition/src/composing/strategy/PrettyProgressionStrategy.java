@@ -5,6 +5,7 @@ import static composing.RandomUtil.roll;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -124,17 +125,16 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 	protected Measure composeBar(Measure lastMeasure, ChordSpec nextChordSpec) {
 			Chord previousChord = key.chord(1, octave); // for first measure only
 			if (lastMeasure != null) {
-				// crude way of getting last notes in measure
-				double lastBeat = lastMeasure.beatValue()*(lastMeasure.beats()-1);
-				List<MidiNote> lastBeatNotes = lastMeasure.getNotes(piano, lastBeat);
-				if (lastBeatNotes.size() < 3)
+				List<MidiNote> lastMeasureNotes = lastMeasure.getNotes(piano, 0, lastMeasure.length());
+				if (lastMeasureNotes.size() < 3) {
 					throw new IllegalStateException("A random bug appears! ... The plot thickens!"); // rare, have yet to diagnose
-				previousChord = new Chord(lastBeatNotes.stream()
+				}
+				previousChord = new Chord(lastMeasureNotes.stream()
 													   .map(MidiNote::getPitch)
 													   .map(MidiPitch::new)
 													   .collect(Collectors.toList()));
 			}
-			Measure measure = backgroundChord(previousChord, nextChordSpec);
+			Measure measure = backgroundChord(previousChord, nextChordSpec, piano);
 //			if (lastMeasure != null && roll(50))
 //				tieMeasures(lastMeasure, measure);
 			measure.setMetaInfo("(" + nextChordSpec + ")");
@@ -173,24 +173,54 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		return currentTempo;
 	}
 
-	private Measure backgroundChord(Chord previousChord, ChordSpec nextChordSpec) {
+	private Measure backgroundChord(Chord previousChord, ChordSpec nextChordSpec, Instrument instrument) {
 		Measure measure = new Measure(4, 1/4.0);
-		measure.addInstrument(piano);
 		
 		int bassMin = MidiPitch.inOctave(key.getTonic(), octave);
 		int bassMax = bassMin + 19;
 		Chord voiceLeadChord = VoiceLeading.voiceLead(previousChord, nextChordSpec, bassMin, bassMax);
 		
-		for (int i=0; i<measure.beats(); i++) {
-			for (MidiPitch pitch : voiceLeadChord) {
-				MidiNote note = new MidiNote(pitch, measure.beatValue());
-				if (i != 0)
-					note.setDynamic(Dynamic.below(note.getDynamic()));
-				measure.add(piano, note, i*measure.beatValue());
-			}
-		}
+		albertiBassHalfBeats(voiceLeadChord, instrument, measure);
 		
 		return measure;
+	}
+	
+	private void playChordOnBeats(Chord chord, Instrument instrument, Measure measure) {
+		measure.addInstrument(instrument);
+		for (int beat=0; beat<measure.beats(); beat++) {
+			for (MidiPitch pitch : chord) {
+				MidiNote note = new MidiNote(pitch, measure.beatValue());
+				if (beat != 0)
+					note.setDynamic(Dynamic.below(note.getDynamic()));
+				measure.add(instrument, note, beat*measure.beatValue());
+			}
+		}
+	}
+	
+	private void arpeggiateChordHalfBeats(Chord chord, Instrument instrument, Measure measure) {
+		measure.addInstrument(instrument);
+		Iterator<MidiPitch> arpeggiator = chord.arpeggiator();
+		double beatValue = measure.beatValue();
+		double noteLength = beatValue/2.0;
+		for (int beat=0; beat<measure.beats(); beat++) {
+			MidiNote note1 = new MidiNote(arpeggiator.next(), noteLength);
+			MidiNote note2 = new MidiNote(arpeggiator.next(), noteLength);
+			measure.add(instrument,  note1, beat*beatValue);
+			measure.add(instrument,  note2, beat*beatValue + noteLength);
+		}
+	}
+	
+	private void albertiBassHalfBeats(Chord chord, Instrument instrument, Measure measure) {
+		measure.addInstrument(instrument);
+		Iterator<MidiPitch> arpeggiator = chord.albertiBass();
+		double beatValue = measure.beatValue();
+		double noteLength = beatValue/2.0;
+		for (int beat=0; beat<measure.beats(); beat++) {
+			MidiNote note1 = new MidiNote(arpeggiator.next(), noteLength);
+			MidiNote note2 = new MidiNote(arpeggiator.next(), noteLength);
+			measure.add(instrument,  note1, beat*beatValue);
+			measure.add(instrument,  note2, beat*beatValue + noteLength);
+		}
 	}
 	
 	@SuppressWarnings("unused")
