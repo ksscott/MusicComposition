@@ -29,6 +29,10 @@ public class Measure implements Comparable<Measure> {
 	private Set<InstrumentMeasure> instruments;
 	
 	public Measure(int beats, double beatValue) {
+		if (beats < 1)
+			throw new IllegalArgumentException("Measures must have at least one beat.");
+		if (beatValue <= 0 )
+			throw new IllegalArgumentException("Measure beats must have a positive duration.");
 		this.beats = beats;
 		this.beatValue = beatValue;
 		this.instruments = new HashSet<>();
@@ -199,8 +203,10 @@ public class Measure implements Comparable<Measure> {
 			drawing += instString;
 		}
 		
-		// mushes all measures together, no break between:
-		drawing = drawing.substring(0,drawing.length()-System.lineSeparator().length());
+		if (drawing.length() > System.lineSeparator().length()) {
+			// mushes all measures together, no break between:
+			drawing = drawing.substring(0,drawing.length()-System.lineSeparator().length());
+		}
 		
 		return drawing;
 	}
