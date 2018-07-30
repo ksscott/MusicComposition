@@ -61,6 +61,9 @@ public class Chord implements Iterable<MidiPitch> {
 	}
 	
 	public Iterator<MidiPitch> arpeggiator() {
+		if (isEmpty())
+			throw new IllegalStateException("Cannot arpeggiate an empty chord.");
+		
 		return new Iterator<MidiPitch>(){
 
 			int index = 0;
@@ -74,8 +77,6 @@ public class Chord implements Iterable<MidiPitch> {
 
 			@Override
 			public MidiPitch next() {
-				if (notes.size() == 0)
-					return null;
 				if (notes.size() == 1)
 					return notes.get(0);
 				
