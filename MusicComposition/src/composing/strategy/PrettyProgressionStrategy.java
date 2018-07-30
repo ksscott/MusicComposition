@@ -208,8 +208,31 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		for (int beat=0; beat<measure.beats(); beat++) {
 			MidiNote note1 = new MidiNote(arpeggiator.next(), noteLength);
 			MidiNote note2 = new MidiNote(arpeggiator.next(), noteLength);
+			if (beat != 0)
+				note1.setDynamic(Dynamic.below(note1.getDynamic()));
+			note2.setDynamic(Dynamic.below(note1.getDynamic()));
 			measure.add(instrument,  note1, beat*beatValue);
 			measure.add(instrument,  note2, beat*beatValue + noteLength);
+		}
+	}
+	
+	@SuppressWarnings("unused")
+	private void triplets(Chord chord, Instrument instrument, Measure measure) {
+		List<MidiPitch> pitches = chord.get();
+		if (pitches.size() != 3)
+			throw new IllegalArgumentException("Only chords with exactly three pitches are supported.");
+		measure.addInstrument(instrument);
+		double beatValue = measure.beatValue();
+		double noteLength = beatValue/3.0;
+		for (int beat=0; beat<measure.beats(); beat++) {
+			for (int i=0; i<pitches.size(); i++) {
+				MidiNote note = new MidiNote(pitches.get(i), noteLength);
+				if (i == 0)
+					note.setDynamic(Dynamic.above(note.getDynamic()));
+				if (beat != 0)
+					note.setDynamic(Dynamic.below(note.getDynamic()));
+				measure.add(instrument, note, beat*beatValue + i*noteLength);
+			}
 		}
 	}
 	
@@ -222,6 +245,9 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		for (int beat=0; beat<measure.beats(); beat++) {
 			MidiNote note1 = new MidiNote(arpeggiator.next(), noteLength);
 			MidiNote note2 = new MidiNote(arpeggiator.next(), noteLength);
+			if (beat != 0)
+				note1.setDynamic(Dynamic.below(note1.getDynamic()));
+			note2.setDynamic(Dynamic.below(note1.getDynamic()));
 			measure.add(instrument,  note1, beat*beatValue);
 			measure.add(instrument,  note2, beat*beatValue + noteLength);
 		}
@@ -240,14 +266,16 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		double noteLength = beatValue/2.0;
 		
 		for (int beat=0; beat<measure.beats(); beat++) {
+			Dynamic dynamic = Dynamic.MEZZO_FORTE;
 			for (MidiPitch pitch : rest) {
 				MidiNote chordNote = new MidiNote(pitch, noteLength);
 				if (beat != 0)
 					chordNote.setDynamic(Dynamic.below(chordNote.getDynamic()));
 				measure.add(instrument, chordNote, beat*beatValue);
+				dynamic = chordNote.getDynamic();
 			}
 			MidiNote bassNote = new MidiNote(bass, noteLength);
-			bassNote.setDynamic(Dynamic.below(bassNote.getDynamic()));
+			bassNote.setDynamic(Dynamic.below(dynamic));
 			measure.add(instrument, bassNote, beat*beatValue + noteLength);
 		}
 	}
