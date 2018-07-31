@@ -50,13 +50,13 @@ public class Dynamic {
 		else if (equals(FORTISSIMO))
 			retval = "ff";
 		else {
-			if (value > 3) {
+			if (value > FORTISSIMO.value) {
 				retval = "ff";
-				for (int i=4; i<=value; i++)
+				for (int i=FORTISSIMO.value+1; i<=value; i++)
 					retval += "f";
 			} else { // assume value < -2
 				retval = "pp";
-				for (int i=-3; i>= value; i--)
+				for (int i=PIANISSIMO.value-1; i>= value; i--)
 					retval += "p";
 			}
 		}
