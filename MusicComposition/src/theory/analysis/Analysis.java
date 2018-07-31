@@ -10,10 +10,12 @@ public class Analysis {
 
 	private Set<Phrase> motifs;
 	private List<PieceSection> sections;
+	private List<Object> views;
 	
 	public Analysis() {
 		this.motifs = new HashSet<>();
 		this.sections = new ArrayList<>();
+		this.views = new ArrayList<>();
 	}
 	
 	public Set<Phrase> getMotifs() {
@@ -38,6 +40,21 @@ public class Analysis {
 	
 	public int lastEndOfSection() {
 		return sections.stream().mapToInt(PieceSection::lastMeasureNumber).max().orElse(0);
+	}
+	
+	/**
+	 * Intended to allow custom analyses to be added to this Analysis
+	 * @param view a custom object to be stored in this analysis
+	 */
+	public void addView(Object view) {
+		views.add(view);
+	}
+	
+	/**
+	 * @return a list of all custom analyses added to this Analysis
+	 */
+	public List<Object> getViews() {
+		return views;
 	}
 	
 	private class PieceSection implements Comparable<PieceSection> {
