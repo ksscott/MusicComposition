@@ -5,12 +5,14 @@ import static composing.RandomUtil.roll;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import composing.IncompleteComposition;
+import composing.RandomUtil;
+import composing.writer.ChordPlayingUtil;
 import composing.writer.PrettyMelodyWriter;
 import performance.Dynamic;
 import performance.MidiNote;
@@ -39,6 +41,7 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 	
 	protected int octave = 3;
 	protected Tempo currentTempo;
+	private Function<Chord,Phrase> chordPlayer; // hackish
 	
 	protected Instrument piano;
 	protected Instrument solo;
@@ -47,6 +50,7 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		super(key);
 		this.melodyWriter = new PrettyMelodyWriter();
 		this.currentTempo = Tempo.ADAGIETTO;
+		this.chordPlayer = chord -> ChordPlayingUtil.playChordOnBeats(chord);
 		this.piano = Instrument.PIANO;
 		this.solo = Instrument.SOLO;
 	}
@@ -158,8 +162,10 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
+		changeChordStyle();
 	}
-	
+
 	/**
 	 * @param increase <code>true</code> to increase the tempo by 1, or false to decrease it by 1
 	 * @return the tempo after the change
@@ -180,108 +186,63 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		int bassMax = bassMin + 19;
 		Chord voiceLeadChord = VoiceLeading.voiceLead(previousChord, nextChordSpec, bassMin, bassMax);
 		
-		chordOscillation(voiceLeadChord, instrument, measure);
+//		ChordPlayingUtil.arpeggiateChordHalfBeats(voiceLeadChord, instrument, measure);
+		Phrase chordPhrase = chordPlayer.apply(voiceLeadChord);
+		measure.addInstrument(instrument);
+		// clunky phrase repetition, truncated ending:
+		while (true) {
+			try {
+				measure.add(instrument, chordPhrase.clone());
+			} catch (Exception e) {
+				break;
+			}
+		}
+		
+		// dynamics adjusting
+		// stress beats
+		double beatValue = measure.beatValue();
+		for (int beat=0; beat<measure.beats(); beat++) {
+			List<MidiNote> downbeatNotes = measure.getNotes(instrument, beat*beatValue);
+			for (MidiNote note : downbeatNotes) {
+//				System.out.println("original dynamic: " + note.getDynamic());
+				note.setDynamic(Dynamic.above(note.getDynamic()));
+//				System.out.println("adjusted dynamic: " + note.getDynamic());
+			}
+		}
+		// ease off all notes after first whole beat:
+//		System.out.println("Measure length: " + measure.length());
+//		System.out.println("Getting notes from " + beatValue + " to " + measure.length());
+		List<MidiNote> remainingNotes = measure.getNotes(instrument, beatValue, measure.length());
+//		System.out.println("Remaining notes: " + remainingNotes.size());
+		for (MidiNote note : remainingNotes)
+			note.setDynamic(Dynamic.below(note.getDynamic()));
 		
 		return measure;
 	}
 	
-	@SuppressWarnings("unused")
-	private void playChordOnBeats(Chord chord, Instrument instrument, Measure measure) {
-		measure.addInstrument(instrument);
-		double beatValue = measure.beatValue();
-		for (int beat=0; beat<measure.beats(); beat++) {
-			for (MidiPitch pitch : chord) {
-				MidiNote note = new MidiNote(pitch, beatValue);
-				if (beat != 0)
-					note.setDynamic(Dynamic.below(note.getDynamic()));
-				measure.add(instrument, note, beat*beatValue);
-			}
+	private void changeChordStyle() {
+		// change chord playing between sections. hacky:
+		switch (RandomUtil.random(5)) {
+			case 0:
+				chordPlayer = chord -> ChordPlayingUtil.playChordOnBeats(chord);
+				break;
+			case 1:
+				chordPlayer = chord -> ChordPlayingUtil.arpeggiateChordHalfBeats(chord);
+				break;
+			case 2:
+				chordPlayer = chord -> ChordPlayingUtil.albertiBassHalfBeats(chord);
+				break;
+			case 3:
+				chordPlayer = chord -> ChordPlayingUtil.chordOscillation(chord);
+				break;
+			case 4:
+				chordPlayer = chord -> ChordPlayingUtil.triplets(chord);
+				break;
 		}
 	}
-	
+
 	@SuppressWarnings("unused")
-	private void arpeggiateChordHalfBeats(Chord chord, Instrument instrument, Measure measure) {
-		Iterator<MidiPitch> arpeggiator = chord.arpeggiator();
-		measure.addInstrument(instrument);
-		double beatValue = measure.beatValue();
-		double noteLength = beatValue/2.0;
-		for (int beat=0; beat<measure.beats(); beat++) {
-			MidiNote note1 = new MidiNote(arpeggiator.next(), noteLength);
-			MidiNote note2 = new MidiNote(arpeggiator.next(), noteLength);
-			if (beat != 0)
-				note1.setDynamic(Dynamic.below(note1.getDynamic()));
-			note2.setDynamic(Dynamic.below(note1.getDynamic()));
-			measure.add(instrument,  note1, beat*beatValue);
-			measure.add(instrument,  note2, beat*beatValue + noteLength);
-		}
-	}
-	
-	@SuppressWarnings("unused")
-	private void triplets(Chord chord, Instrument instrument, Measure measure) {
-		List<MidiPitch> pitches = chord.get();
-		if (pitches.size() != 3)
-			throw new IllegalArgumentException("Only chords with exactly three pitches are supported.");
-		measure.addInstrument(instrument);
-		double beatValue = measure.beatValue();
-		double noteLength = beatValue/3.0;
-		for (int beat=0; beat<measure.beats(); beat++) {
-			for (int i=0; i<pitches.size(); i++) {
-				MidiNote note = new MidiNote(pitches.get(i), noteLength);
-				if (i == 0)
-					note.setDynamic(Dynamic.above(note.getDynamic()));
-				if (beat != 0)
-					note.setDynamic(Dynamic.below(note.getDynamic()));
-				measure.add(instrument, note, beat*beatValue + i*noteLength);
-			}
-		}
-	}
-	
-	@SuppressWarnings("unused")
-	private void albertiBassHalfBeats(Chord chord, Instrument instrument, Measure measure) {
-		Iterator<MidiPitch> arpeggiator = chord.albertiBass();
-		measure.addInstrument(instrument);
-		double beatValue = measure.beatValue();
-		double noteLength = beatValue/2.0;
-		for (int beat=0; beat<measure.beats(); beat++) {
-			MidiNote note1 = new MidiNote(arpeggiator.next(), noteLength);
-			MidiNote note2 = new MidiNote(arpeggiator.next(), noteLength);
-			if (beat != 0)
-				note1.setDynamic(Dynamic.below(note1.getDynamic()));
-			note2.setDynamic(Dynamic.below(note1.getDynamic()));
-			measure.add(instrument,  note1, beat*beatValue);
-			measure.add(instrument,  note2, beat*beatValue + noteLength);
-		}
-	}
-	
-	@SuppressWarnings("unused")
-	private void chordOscillation(Chord chord, Instrument instrument, Measure measure) {
-		List<MidiPitch> pitches = chord.get();
-		if (pitches.size() < 3)
-			throw new IllegalArgumentException("Must have at least three pitches to oscillate a chord.");
-		measure.addInstrument(instrument);
-		
-		MidiPitch bass = pitches.get(0);
-		List<MidiPitch> rest = pitches.subList(1, pitches.size());
-		double beatValue = measure.beatValue();
-		double noteLength = beatValue/2.0;
-		
-		for (int beat=0; beat<measure.beats(); beat++) {
-			Dynamic dynamic = Dynamic.MEZZO_FORTE;
-			for (MidiPitch pitch : rest) {
-				MidiNote chordNote = new MidiNote(pitch, noteLength);
-				if (beat != 0)
-					chordNote.setDynamic(Dynamic.below(chordNote.getDynamic()));
-				measure.add(instrument, chordNote, beat*beatValue);
-				dynamic = chordNote.getDynamic();
-			}
-			MidiNote bassNote = new MidiNote(bass, noteLength);
-			bassNote.setDynamic(Dynamic.below(dynamic));
-			measure.add(instrument, bassNote, beat*beatValue + noteLength);
-		}
-	}
-	
-	@SuppressWarnings("unused")
-	private void tieMeasures(Measure lastMeasure, Measure nextMeasure) {
+	private static void tieMeasures(Measure lastMeasure, Measure nextMeasure) {
 		for (Instrument instrument : lastMeasure.getInstruments()) {
 			List<MidiNote> lastNotes = lastMeasure.getNotes(instrument, lastMeasure.beatValue()*(lastMeasure.beats()-1));
 			List<MidiNote> firstNotes = nextMeasure.getNotes(instrument, 0.0); // hard coded :(
