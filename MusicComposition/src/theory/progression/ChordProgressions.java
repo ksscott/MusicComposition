@@ -1,7 +1,5 @@
 package theory.progression;
 
-import static composing.RandomUtil.roll;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -11,15 +9,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static composing.RandomUtil.*;
-
-import theory.Chord;
 import theory.ChordSpec;
+import theory.ChordSpec.Degree;
+import theory.ChordSpec.Quality;
 import theory.Key;
 import theory.MidiPitch;
 import theory.Note;
-import theory.ChordSpec.Degree;
-import theory.ChordSpec.Quality;
 import theory.progression.ChordProgressions.ChordProgression.ProgressionNode;
 
 /**

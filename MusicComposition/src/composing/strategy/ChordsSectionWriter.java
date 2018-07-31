@@ -34,8 +34,6 @@ public abstract class ChordsSectionWriter implements ComposingStrategy {
 		protected abstract ChordProgression nextSectionProgression(Analysis analysis);
 		
 		/**
-		 * Allows subclasses to extend this method and write additional music on top of the base line. e.g.
-		 * <p>
 		 * Note: Assumes one chord per bar
 		 * 
 		 * @param lastMeasure immediately before the measure to be composed, used for voice leading
@@ -128,7 +126,7 @@ public abstract class ChordsSectionWriter implements ComposingStrategy {
 		 * Modifies the given Section object
 		 * 
 		 * @param nextSection an incomplete section to be filled out
-		 * @param progression
+		 * @param progression used to apply chords to each measure in the given section
 		 */
 		private void fillSection(ChordsSection nextSection, ChordProgression progression, ChordSpec precedingChord) {
 			List<ChordSpec> chordSpecs = nextSection.getAllChords();
