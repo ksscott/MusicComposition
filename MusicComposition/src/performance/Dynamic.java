@@ -15,8 +15,9 @@ public class Dynamic {
 		this.value = value;
 	}
 	
-	public int getValue() {
-		return value;
+	/** @return value between 0 (silent) and 1 (maximum) */
+	public float volume() {
+		return (float) ((Math.atan(value*.7) / Math.PI) + 0.5);
 	}
 	
 	public static Dynamic of(Dynamic other) {

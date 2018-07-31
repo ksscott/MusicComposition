@@ -150,7 +150,7 @@ public class BeadRunner {
 //							System.out.print(pitch + " "); // for old note printing method
 							float freq = Pitch.mtof(pitch);
 							int durationMillis = (int) (millisPerWholeNote * note.getDuration()); // (millis / whole-note) * whole-notes
-							float volume = (float) volume(note.getDynamic());
+							float volume = (float) note.getDynamic().volume();
 							Gain g;
 							
 							int tiedFrom = note.getTiedFromPitch();
@@ -193,14 +193,6 @@ public class BeadRunner {
 	
 	public static float random(double x) {
 		return (float)(Math.random() * x);
-	}
-	
-	/**
-	 * @param dynamic the volume to be represented
-	 * @return value between 0 (silent) and 1 (maximum)
-	 */
-	public static double volume(Dynamic dynamic) {
-		return (Math.atan(dynamic.getValue()) / Math.PI) + 0.5;
 	}
 	
 	private static synchronized void addUserInput(String input) {
