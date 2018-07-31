@@ -21,6 +21,10 @@ public class Ornament {
 //	SCHLEIFER, // TODO
 	;
 	
+	/**
+	 * Defaults to half the duration of the adorned note.
+	 * @see #trill(MidiNote, Key, double)
+	 */
 	public static Phrase trill(MidiNote note, Key key) {
 		return trill(note, key, 1/4.0);
 	}
@@ -45,6 +49,10 @@ public class Ornament {
 		return phrase;
 	}
 	
+	/**
+	 * Defaults to half the duration of the adorned note.
+	 * @see #upperMordent(MidiNote, Key, double)
+	 */
 	public static Phrase upperMordent(MidiNote note, Key key) {
 		return upperMordent(note, key, note.getDuration()/2.0);
 	}
@@ -66,6 +74,10 @@ public class Ornament {
 		return phrase;
 	}
 	
+	/**
+	 * Defaults to half the duration of the adorned note.
+	 * @see #lowerMordent(MidiNote, Key, double)
+	 */
 	public static Phrase lowerMordent(MidiNote note, Key key) {
 		return lowerMordent(note, key, note.getDuration()/2.0);
 	}
@@ -87,6 +99,10 @@ public class Ornament {
 		return phrase;
 	}
 	
+	/**
+	 * Defaults to half the duration of the adorned note.
+	 * @see #turn(MidiNote, Key, double)
+	 */
 	public static Phrase turn(MidiNote note, Key key) {
 		return turn(note, key, note.getDuration() / 2.0);
 	}

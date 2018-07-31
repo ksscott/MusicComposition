@@ -71,8 +71,8 @@ public class Measure implements Comparable<Measure> {
 	}
 
 	/**
-	 * @param time start, exclusive
-	 * @param time end, inclusive
+	 * @param time start, inclusive
+	 * @param time end, exclusive
 	 * @return notes in a range
 	 */
 	public List<MidiNote> getNotes(Instrument instrument, double start, double end) {
