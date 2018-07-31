@@ -8,7 +8,7 @@ import java.util.Map;
 
 import performance.MidiNote;
 
-public class Phrase {
+public class Phrase implements Cloneable {
 	
 	private Map<Double,List<MidiNote>> notes;
 
@@ -118,6 +118,9 @@ public class Phrase {
 	 * <p>
 	 * | q q q q |  -->  | h h | h h |
 	 * 
+	 * <p>
+	 * WARNING: Note ties will not be preserved
+	 * 
 	 * @param timeRatio ratio of expansion, ratios less than 1 will compress the phrase, 
 	 * non-positive ratios not supported
 	 * @return the expanded phrase
@@ -130,7 +133,7 @@ public class Phrase {
 			List<MidiNote> list = notes.get(time);
 			List<MidiNote> newList = new ArrayList<>();
 			for (MidiNote note : list)
-				newList.add(new MidiNote(note.getPitch(), note.getDuration()*timeRatio));
+				newList.add(note.expand(timeRatio));
 			phrase.notes.put(time*timeRatio, newList);
 		}
 		return phrase;
@@ -151,6 +154,11 @@ public class Phrase {
 			phraseString += ") ";
 		}
 		return phraseString;
+	}
+	
+	@Override
+	public Phrase clone() {
+		return expand(1);
 	}
 	
 }

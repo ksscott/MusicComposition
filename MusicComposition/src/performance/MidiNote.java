@@ -2,11 +2,11 @@ package performance;
 
 import theory.MidiPitch;
 
-public class MidiNote {
+public class MidiNote implements Cloneable {
 	
 	private int pitch;
 	private double duration;
-	private int peakMillis = 150;
+	private int peakMillis;
 	private Dynamic dynamic;
 	
 	// experimental:
@@ -15,7 +15,10 @@ public class MidiNote {
 	
 	public MidiNote(int midiPitch, double duration) {
 		this.pitch = midiPitch;
+		if (duration <= 0)
+			throw new IllegalArgumentException("MidiNote must have a positive duration.");
 		this.duration = duration;
+		this.peakMillis = 150;
 		this.dynamic = Dynamic.MEZZO_FORTE;
 	}
 	
@@ -33,6 +36,10 @@ public class MidiNote {
 	
 	public int getPeakMillis() {
 		return peakMillis;
+	}
+	
+	public void setPeakMillis(int milliseconds) {
+		this.peakMillis = milliseconds;
 	}
 	
 	public Dynamic getDynamic() {
@@ -53,6 +60,17 @@ public class MidiNote {
 		return tiesOver;
 	}
 	
+	/** Returns a new clone, lengthened by the given timeRatio */
+	public MidiNote expand(double timeRatio) {
+		if (timeRatio <= 0)
+			throw new IllegalArgumentException("Only positive ratios accepted for expansions.");
+		MidiNote note = new MidiNote(pitch, duration*timeRatio);
+		note.peakMillis = this.peakMillis;
+		note.dynamic = this.dynamic;
+		// choosing not to preserve any ties
+		return note;
+	}
+	
 	/** discouraged, use #tieOver */
 	public void setTiesOver(boolean ties) {
 		tiesOver = ties;
@@ -66,5 +84,10 @@ public class MidiNote {
 	@Override
 	public String toString() {
 		return "MidiNote[" + pitch + "," + duration + "]";
+	}
+	
+	@Override
+	public MidiNote clone() {
+		return expand(1);
 	}
 }
