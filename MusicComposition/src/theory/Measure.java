@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import performance.MidiAction;
 import performance.MidiNote;
 import performance.instrument.Instrument;
 import theory.analysis.Phrase;
@@ -66,14 +67,37 @@ public class Measure implements Comparable<Measure> {
 		instruments.removeIf(inst -> inst.getInstrument().equals(removed));
 	}
 	
-	public List<MidiNote> getNotes(Instrument instrument, double time) {
-		return getInstrument(instrument).getNotes(time);
+	/**
+	 * @param instrument to query
+	 * @param time within measure
+	 * @return notes and rests occurring at this time
+	 */
+	public List<MidiAction> getActions(Instrument instrument, double time) {
+		return getInstrument(instrument).getActions(time);
 	}
 
 	/**
 	 * @param time start, inclusive
 	 * @param time end, exclusive
-	 * @return notes in a range
+	 * @return notes and rests occurring in a range of times
+	 */
+	public List<MidiAction> getActions(Instrument instrument, double start, double end) {
+		return getInstrument(instrument).getActions(start, end);
+	}
+	
+	/**
+	 * @param instrument to query
+	 * @param time within measure
+	 * @return notes occurring at this time
+	 */
+	public List<MidiNote> getNotes(Instrument instrument, double time) {
+		return getInstrument(instrument).getNotes(time);
+	}
+	
+	/**
+	 * @param time start, inclusive
+	 * @param time end, exclusive
+	 * @return notes occurring in a range of times
 	 */
 	public List<MidiNote> getNotes(Instrument instrument, double start, double end) {
 		return getInstrument(instrument).getNotes(start, end);
@@ -90,7 +114,7 @@ public class Measure implements Comparable<Measure> {
 		return this;
 	}
 	
-	public Measure add(Instrument instrument, MidiNote note, double offset) {
+	public Measure add(Instrument instrument, MidiAction note, double offset) {
 		getInstrument(instrument).add(note, offset);
 		return this;
 	}
@@ -182,7 +206,7 @@ public class Measure implements Comparable<Measure> {
 										@Override public int compare(MidiNote o1, MidiNote o2) {
 											return o2.getPitch() - o1.getPitch(); // flipped, highest on top
 										}}))
-									 .map(time -> getNotes(instrument, time))
+									 .map(time -> getActions(instrument, time)) // TODO consider using getNotes() instead
 									 .mapToInt(List::size)
 									 .max()
 									 .orElse(0);
@@ -223,7 +247,7 @@ public class Measure implements Comparable<Measure> {
 		int measureIndex = 0;
 		Measure measure = measures.get(measureIndex);
 		Double ticker = 0.0; // slide the ticker to the start of each measure
-		Map<Double, List<MidiNote>> phraseNotes = phrase.getNotes();
+		Map<Double, List<MidiAction>> phraseNotes = phrase.getNotes();
 		List<Double> times = new ArrayList<>(phraseNotes.keySet());
 		Collections.sort(times);
 		
@@ -237,10 +261,10 @@ public class Measure implements Comparable<Measure> {
 				measure = measures.get(++measureIndex);
 			}
 			double location = time - ticker;
-			List<MidiNote> notes = phraseNotes.get(time);
+			List<MidiAction> notes = phraseNotes.get(time);
 //			if (notes.size() > 1)
 //				throw new IllegalStateException("bug!");
-			for (MidiNote note : notes) {
+			for (MidiAction note : notes) {
 				measure.add(instrument, note, location);
 //				if (location == 0)
 //					System.out.println("downbeat" + note.getPitch() + " ");
@@ -269,7 +293,7 @@ public class Measure implements Comparable<Measure> {
 	private class InstrumentMeasure {
 		
 		private Instrument instrument;
-		private Map<Double,List<MidiNote>> notes;
+		private Map<Double,List<MidiAction>> notes;
 		
 		public InstrumentMeasure(Instrument instrument) {
 			this.instrument = instrument;
@@ -285,18 +309,18 @@ public class Measure implements Comparable<Measure> {
 		public double beatValue() { return Measure.this.beatValue(); }
 //		public double length() { return Measure.this.length(); }
 		
-		public List<MidiNote> getNotes(double time) {
-			List<MidiNote> list = notes.get(new Double(time));
+		public List<MidiAction> getActions(double time) {
+			List<MidiAction> list = notes.get(new Double(time));
 			return list == null ? new ArrayList<>() : new ArrayList<>(list);
 		}
 		
 		/**
-		 * @param start first time to return played notes (inclusive)
-		 * @param end last time to return played notes (exclusive)
+		 * @param start first time to return played actions (inclusive)
+		 * @param end last time to return played a (exclusive)
 		 * @return all notes played in the given time window, sorted by time played
 		 */
-		public List<MidiNote> getNotes(double start, double end) {
-			List<MidiNote> allNotes = new ArrayList<>();
+		public List<MidiAction> getActions(double start, double end) {
+			List<MidiAction> allNotes = new ArrayList<>();
 			List<Double> keySet = new ArrayList<>(notes.keySet());
 			Collections.sort(keySet);
 //			System.out.println("Key set size: " + keySet.size());
@@ -309,19 +333,41 @@ public class Measure implements Comparable<Measure> {
 			return allNotes;
 		}
 		
-		public void add(MidiNote note) {
+		public List<MidiNote> getNotes(double time) {
+			List<MidiNote> notes = new ArrayList<>();
+			for (MidiAction action : getActions(time))
+				if (action instanceof MidiNote)
+					notes.add((MidiNote) action);
+			return notes;
+		}
+		
+		/**
+		 * @param start first time to return played notes (inclusive)
+		 * @param end last time to return played notes (exclusive)
+		 * @return all notes played in the given time window, sorted by time played
+		 */
+		public List<MidiNote> getNotes(double start, double end) {
+			List<MidiNote> notes = new ArrayList<>();
+			for (MidiAction action : getActions(start, end))
+				if (action instanceof MidiNote)
+					notes.add((MidiNote) action);
+			return notes;
+		}
+		
+		public void add(MidiAction note) {
 			add(note, latestNoteEnd());
 		}
 		
-		public void add(MidiNote note, double offset) {
+		public void add(MidiAction note, double offset) {
 			if (offset < 0)
 				throw new IllegalArgumentException("Cannot add notes before start of measure.");
 			if (offset + note.getDuration() > beats * beatValue)
-				throw new IllegalArgumentException("Note would end after end of measure.");
+				throw new IllegalArgumentException("Note would end after end of measure."
+						+ " Note of duration " + note.getDuration() + " at time " + offset);
 			
 //			System.out.println("Adding note to " + instrument);
 			
-			List<MidiNote> list = notes.get(new Double(offset));
+			List<MidiAction> list = notes.get(new Double(offset));
 			if (list == null) {
 				list = new ArrayList<>();
 				notes.put(new Double(offset), list);
@@ -340,9 +386,9 @@ public class Measure implements Comparable<Measure> {
 			if (offset + phrase.getEnd() > beats * beatValue)
 				throw new IllegalArgumentException("Phrase would end after end of measure.");
 
-			Map<Double, List<MidiNote>> phraseNotes = phrase.getNotes();
+			Map<Double, List<MidiAction>> phraseNotes = phrase.getNotes();
 			for (Double time : phraseNotes.keySet())
-				for (MidiNote note : phraseNotes.get(time))
+				for (MidiAction note : phraseNotes.get(time))
 					add(note, offset + time);
 		}
 		
@@ -364,7 +410,7 @@ public class Measure implements Comparable<Measure> {
 		private double latestNoteEnd() {
 			double latest = 0;
 			for (Double dub : notes.keySet()) {
-				for (MidiNote note : notes.get(dub)) {
+				for (MidiAction note : notes.get(dub)) {
 					latest = Math.max(latest, dub + note.getDuration());
 				}
 			}

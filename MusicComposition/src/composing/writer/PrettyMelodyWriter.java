@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import performance.Dynamic;
+import performance.MidiAction.MidiRest;
 import performance.MidiNote;
 import theory.Key;
 import theory.Measure;
@@ -44,8 +45,8 @@ public class PrettyMelodyWriter implements MelodyWriter {
 			return phrase;
 		
 		Set<MidiPitch> allPitchesInAllMeasures = measures.stream().flatMap(
-				measure -> measure.getInstruments().stream().flatMap(
-				   inst -> measure.getNotes(inst, 0, measure.length()).stream()))
+					  measure -> measure.getInstruments().stream().flatMap(
+						 inst -> measure.getNotes(inst, 0, measure.length()).stream()))
 				.map(MidiNote::getPitch)
 				.map(MidiPitch::new)
 				.collect(Collectors.toSet());
@@ -67,36 +68,91 @@ public class PrettyMelodyWriter implements MelodyWriter {
 			while (startingPitch.get() < highest - halfStepsBelowHighest)
 				startingPitch = startingPitch.above(12);
 			
-			for (int i=0; i<measure.beats(); i++) {
-				int steps = risingMelody ? i : -i;
-				MidiNote midiNote = new MidiNote(key.stepsAbove(steps, startingPitch), measure.beatValue());
-				midiNote.setDynamic(Dynamic.PIANO);
+			double measureLength = measure.length();
+			double time = 0;
+			int steps = 0;
+			while (time < measureLength) {
+				boolean noteOrRest = roll(95); // false means we rest; determination can/should be changed
+				double duration = 0; // length of note or rest
+				if (noteOrRest && roll(10)) // don't rest for a half note
+					duration = 2/4.0; // half note
+				else if (roll(20))
+					duration = 1/8.0; // eighth note
+				else
+					duration = 1/4.0; // quarter note
+				// else, eighth notes or something
+				duration = Math.min(duration, measureLength-time); // truncate at end of measure
+				
+				if (!noteOrRest) { // rest
+					measurePhrase.add(new MidiRest(duration));
+					measure.setMetaInfo(measure.getMetaInfo() + " rest");
+					time += duration;
+					continue;
+				}
+				
+				MidiNote midiNote = new MidiNote(key.stepsAbove(steps, startingPitch), duration);
+				steps += risingMelody ? 1 : -1;
+				
+				midiNote.setDynamic(Dynamic.MEZZO_PIANO);
 				measure.setMetaInfo(measure.getMetaInfo() + " " + midiNote.getPitch());
 				if (roll(ornamentChance)) {
+					double ornamentLength = Math.min(1/8.0, duration/2.0);
 					if (roll(appoggiaturaChance)) {
-						measurePhrase.add(appoggiatura(midiNote, key));
+						measurePhrase.add(appoggiatura(midiNote, key, ornamentLength), time);
 						measure.setMetaInfo(measure.getMetaInfo() + "ap");
 					}
 					else if (roll(mordentChance)) {
 						if (roll(50))
-							measurePhrase.add(lowerMordent(midiNote, key));
+							measurePhrase.add(lowerMordent(midiNote, key, ornamentLength), time);
 						else
-							measurePhrase.add(upperMordent(midiNote, key));
+							measurePhrase.add(upperMordent(midiNote, key, ornamentLength), time);
 						measure.setMetaInfo(measure.getMetaInfo() + "md");
-					} else if (i==measure.beats()-1){
-						measurePhrase.add(trill(midiNote, key));
+					} else if (time >= measureLength-measure.beatValue()){ // last beat
+						measurePhrase.add(trill(midiNote, key), time);
 						measure.setMetaInfo(measure.getMetaInfo() + "tr");
 					} else {
 //						measurePhrase.add(turn(midiNote, key)); // removing turns for now
 //						measure.setMetaInfo(measure.getMetaInfo() + "tn");
-						measurePhrase.add(midiNote);
+						measurePhrase.add(midiNote, time);
 						measure.setMetaInfo(measure.getMetaInfo() + "__");
 					}
 				} else {
-					measurePhrase.add(midiNote);
+					measurePhrase.add(midiNote, time);
 					measure.setMetaInfo(measure.getMetaInfo() + "__");
 				}
+				time += duration;
 			}
+			
+//			for (int beat=0; beat<measure.beats(); beat++) {
+////				int steps = risingMelody ? beat : -beat;
+//				MidiNote midiNote = new MidiNote(key.stepsAbove(steps, startingPitch), measure.beatValue());
+//				midiNote.setDynamic(Dynamic.PIANO);
+//				measure.setMetaInfo(measure.getMetaInfo() + " " + midiNote.getPitch());
+//				if (roll(ornamentChance)) {
+//					if (roll(appoggiaturaChance)) {
+//						measurePhrase.add(appoggiatura(midiNote, key));
+//						measure.setMetaInfo(measure.getMetaInfo() + "ap");
+//					}
+//					else if (roll(mordentChance)) {
+//						if (roll(50))
+//							measurePhrase.add(lowerMordent(midiNote, key));
+//						else
+//							measurePhrase.add(upperMordent(midiNote, key));
+//						measure.setMetaInfo(measure.getMetaInfo() + "md");
+//					} else if (beat==measure.beats()-1){
+//						measurePhrase.add(trill(midiNote, key));
+//						measure.setMetaInfo(measure.getMetaInfo() + "tr");
+//					} else {
+////						measurePhrase.add(turn(midiNote, key)); // removing turns for now
+////						measure.setMetaInfo(measure.getMetaInfo() + "tn");
+//						measurePhrase.add(midiNote);
+//						measure.setMetaInfo(measure.getMetaInfo() + "__");
+//					}
+//				} else {
+//					measurePhrase.add(midiNote);
+//					measure.setMetaInfo(measure.getMetaInfo() + "__");
+//				}
+//			}
 			phrase.add(measurePhrase);
 			
 //			measure.setMetaInfo(measure.getMetaInfo() + " " + measurePhrase.timesAndNotes());

@@ -6,11 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import performance.MidiNote;
+import performance.MidiAction;
 
 public class Phrase implements Cloneable {
 	
-	private Map<Double,List<MidiNote>> notes;
+	private Map<Double,List<MidiAction>> notes;
 
 	public Phrase() {
 		this.notes = new HashMap<>();
@@ -34,7 +34,7 @@ public class Phrase implements Cloneable {
 			return 0;
 		double latest = Integer.MIN_VALUE;
 		for (Double dub : notes.keySet()) {
-			for (MidiNote note : notes.get(dub)) {
+			for (MidiAction note : notes.get(dub)) {
 				latest = Math.max(latest, dub + note.getDuration());
 			}
 		}
@@ -47,12 +47,12 @@ public class Phrase implements Cloneable {
 	}
 	
 	/** @return a copy of this phrase's map of times and notes */
-	public Map<Double,List<MidiNote>> getNotes() {
+	public Map<Double,List<MidiAction>> getNotes() {
 		return new HashMap<>(notes);
 	}
 	
 	/** @param note to be added to the end of this phrase */
-	public void add(MidiNote note) {
+	public void add(MidiAction note) {
 		add(note, getEnd());
 	}
 	
@@ -60,8 +60,8 @@ public class Phrase implements Cloneable {
 	 * @param note to be added to this phrase
 	 * @param offset time in this phrase to add the given note
 	 */
-	public void add(MidiNote note, double offset) {
-		List<MidiNote> list = notes.get(new Double(offset));
+	public void add(MidiAction note, double offset) {
+		List<MidiAction> list = notes.get(new Double(offset));
 		if (list == null) {
 			list = new ArrayList<>();
 			notes.put(new Double(offset), list);
@@ -102,9 +102,9 @@ public class Phrase implements Cloneable {
 	 * @param offset time in this phrase to set the given phrase's 0 time mark
 	 */
 	public void absorb(Phrase other, double offset) {
-		Map<Double, List<MidiNote>> otherNotes = other.notes;
+		Map<Double, List<MidiAction>> otherNotes = other.notes;
 		for (Double time : otherNotes.keySet())
-			for (MidiNote note : otherNotes.get(time))
+			for (MidiAction note : otherNotes.get(time))
 				add(note, time + offset);
 	}
 
@@ -130,9 +130,9 @@ public class Phrase implements Cloneable {
 			throw new IllegalArgumentException("Only positive ratios accepted for expansions.");
 		Phrase phrase = new Phrase();
 		for (Double time : notes.keySet()) {
-			List<MidiNote> list = notes.get(time);
-			List<MidiNote> newList = new ArrayList<>();
-			for (MidiNote note : list)
+			List<MidiAction> list = notes.get(time);
+			List<MidiAction> newList = new ArrayList<>();
+			for (MidiAction note : list)
 				newList.add(note.expand(timeRatio));
 			phrase.notes.put(time*timeRatio, newList);
 		}
@@ -141,14 +141,14 @@ public class Phrase implements Cloneable {
 	
 	public String timesAndNotes() {
 		String phraseString = "";
-		Map<Double, List<MidiNote>> phraseNotes = getNotes();
+		Map<Double, List<MidiAction>> phraseNotes = getNotes();
 		ArrayList<Double> times = new ArrayList<>(phraseNotes.keySet());
 		Collections.sort(times);
 		for (Double time : times) {
 			phraseString += String.format("(%.2f,", time);
-			List<MidiNote> list = phraseNotes.get(time);
-			for (MidiNote phraseNote : list) {
-				phraseString += phraseNote.getPitch() + ",";
+			List<MidiAction> list = phraseNotes.get(time);
+			for (MidiAction phraseNote : list) {
+				phraseString += phraseNote.getDuration() + ",";
 			}
 			phraseString = phraseString.substring(0, phraseString.length() - 1);
 			phraseString += ") ";

@@ -2,10 +2,9 @@ package performance;
 
 import theory.MidiPitch;
 
-public class MidiNote implements Cloneable {
+public class MidiNote extends MidiAction {
 	
 	private int pitch;
-	private double duration;
 	private int peakMillis;
 	private Dynamic dynamic;
 	
@@ -14,24 +13,18 @@ public class MidiNote implements Cloneable {
 	private boolean tiesOver;
 	
 	public MidiNote(int midiPitch, double duration) {
+		super(duration);
 		this.pitch = midiPitch;
-		if (duration <= 0)
-			throw new IllegalArgumentException("MidiNote must have a positive duration.");
-		this.duration = duration;
 		this.peakMillis = 150;
 		this.dynamic = Dynamic.MEZZO_FORTE;
 	}
 	
-	public MidiNote(MidiPitch pitch, double length) {
-		this(pitch.get(), length);
+	public MidiNote(MidiPitch pitch, double duration) {
+		this(pitch.get(), duration);
 	}
 	
 	public int getPitch() {
 		return pitch;
-	}
-	
-	public double getDuration() {
-		return duration;
 	}
 	
 	public int getPeakMillis() {
@@ -60,7 +53,11 @@ public class MidiNote implements Cloneable {
 		return tiesOver;
 	}
 	
-	/** Returns a new clone, lengthened by the given timeRatio */
+	/**
+	 * Note: does not preserve note ties 
+	 * @see {@link MidiAction#expand(double)}
+	 */
+	@Override
 	public MidiNote expand(double timeRatio) {
 		if (timeRatio <= 0)
 			throw new IllegalArgumentException("Only positive ratios accepted for expansions.");
