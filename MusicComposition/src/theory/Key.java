@@ -374,16 +374,15 @@ public class Key implements Cloneable {
 	}
 
 	public static Quality chordQuality(Chord chord) {
-		List<MidiPitch> pitches = chord.get();
-		if (pitches.size() != 3)
+		if (chord.size() != 3)
 			throw new IllegalArgumentException("Only chords with three pitches currently supported.");
 		
 		int min = 12; // store the least greatest interval
 		List<Integer> intervals = new ArrayList<>();
-		for (MidiPitch pitch : pitches) {
+		for (MidiPitch pitch : chord) {
 			int max = 0;
 			List<Integer> candidateIntervals = new ArrayList<>();
-			for (MidiPitch other : pitches) {
+			for (MidiPitch other : chord) {
 				int halfStepsTo = modPos(pitch.halfStepsTo(other), 12);
 				candidateIntervals.add(halfStepsTo);
 				max = halfStepsTo > max ? halfStepsTo : max;

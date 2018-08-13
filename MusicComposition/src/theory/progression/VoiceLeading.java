@@ -57,7 +57,7 @@ public class VoiceLeading {
 				if (i <= lastPitchAdded)
 					continue;
 				
-				for (MidiPitch acceptable : nextChord.get()) {
+				for (MidiPitch acceptable : nextChord) {
 					if (modPos(acceptable.get() - i, 12) == 0) {
 						found = true;
 						break;

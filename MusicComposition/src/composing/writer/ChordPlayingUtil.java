@@ -70,7 +70,7 @@ public class ChordPlayingUtil {
 	/** Modifies the given measure */
 	public static void triplets(Chord chord, Instrument instrument, Measure measure) {
 		List<MidiPitch> pitches = chord.get();
-		if (pitches.size() != 3)
+		if (chord.size() != 3)
 			throw new IllegalArgumentException("Only chords with exactly three pitches are supported.");
 		measure.addInstrument(instrument);
 		double beatValue = measure.beatValue();
@@ -89,13 +89,13 @@ public class ChordPlayingUtil {
 	
 	/** Assumes quarter-note beats */
 	public static Phrase triplets(Chord chord) {
-		List<MidiPitch> pitches = chord.get();
-		if (pitches.size() != 3)
+		if (chord.size() != 3)
 			throw new IllegalArgumentException("Only chords with exactly three pitches are supported.");
 		Phrase phrase = new Phrase();
-		for (MidiPitch pitch : chord) {
+		
+		for (MidiPitch pitch : chord)
 			phrase.add(new MidiNote(pitch, 1/12.0));
-		}
+		
 		return phrase;
 	}
 	
@@ -132,7 +132,7 @@ public class ChordPlayingUtil {
 	/** Modifies the given measure */
 	public static void chordOscillation(Chord chord, Instrument instrument, Measure measure) {
 		List<MidiPitch> pitches = chord.get();
-		if (pitches.size() < 3)
+		if (chord.size() < 3)
 			throw new IllegalArgumentException("Must have at least three pitches to oscillate a chord.");
 		measure.addInstrument(instrument);
 		
@@ -159,7 +159,7 @@ public class ChordPlayingUtil {
 	/** Assumes quarter-note beats */
 	public static Phrase chordOscillation(Chord chord) {
 		List<MidiPitch> pitches = chord.get();
-		if (pitches.size() < 3)
+		if (chord.size() < 3)
 			throw new IllegalArgumentException("Must have at least three pitches to oscillate a chord.");
 		
 		Phrase phrase = new Phrase();

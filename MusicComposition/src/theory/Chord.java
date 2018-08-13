@@ -51,6 +51,10 @@ public class Chord implements Iterable<MidiPitch> {
 		return pitches.contains(pitch);
 	}
 	
+	public int size() {
+		return pitches.size();
+	}
+	
 	public boolean isEmpty() {
 		return pitches.isEmpty();
 	}
