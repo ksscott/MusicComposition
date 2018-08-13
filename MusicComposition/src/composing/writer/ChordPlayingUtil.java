@@ -100,6 +100,39 @@ public class ChordPlayingUtil {
 	}
 	
 	/** Modifies the given measure */
+	public static void albertiTriplets(Chord chord, Instrument instrument, Measure measure) {
+		if (chord.size() != 3)
+			throw new IllegalArgumentException("Only chords with exactly three pitches are supported.");
+		measure.addInstrument(instrument);
+		double beatValue = measure.beatValue();
+		double noteLength = beatValue/3.0;
+		for (int beat=0; beat<measure.beats(); beat++) {
+			for (int i=0; i<3; i++) {
+				Iterator<MidiPitch> albertiBass = chord.albertiBass();
+				MidiNote note = new MidiNote(albertiBass.next(), noteLength);
+				if (i == 0)
+					note.setDynamic(Dynamic.above(note.getDynamic()));
+				if (beat != 0)
+					note.setDynamic(Dynamic.below(note.getDynamic()));
+				measure.add(instrument, note, beat*beatValue + i*noteLength);
+			}
+		}
+	}
+	
+	/** Assumes quarter-note beats */
+	public static Phrase albertiTriplets(Chord chord) {
+		if (chord.size() != 3)
+			throw new IllegalArgumentException("Only chords with exactly three pitches are supported.");
+		Phrase phrase = new Phrase();
+		
+		Iterator<MidiPitch> albertiBass = chord.albertiBass();
+		for (int i=0; i<3; i++)
+			phrase.add(new MidiNote(albertiBass.next(), 1/12.0));
+		
+		return phrase;
+	}
+	
+	/** Modifies the given measure */
 	public static void albertiBassHalfBeats(Chord chord, Instrument instrument, Measure measure) {
 		Iterator<MidiPitch> albertiBass = chord.albertiBass();
 		measure.addInstrument(instrument);

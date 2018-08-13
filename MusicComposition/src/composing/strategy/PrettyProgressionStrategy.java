@@ -222,21 +222,26 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 	
 	private void changeChordStyle() {
 		// change chord playing between sections. hacky:
-		switch (RandomUtil.random(5)) {
+		switch (RandomUtil.random(8)) {
 			case 0:
+			case 1:
 				chordPlayer = chord -> ChordPlayingUtil.playChordOnBeats(chord);
 				break;
-			case 1:
+			case 2:
 				chordPlayer = chord -> ChordPlayingUtil.arpeggiateChordHalfBeats(chord);
 				break;
-			case 2:
+			case 3:
 				chordPlayer = chord -> ChordPlayingUtil.albertiBassHalfBeats(chord);
 				break;
-			case 3:
+			case 4:
+			case 5:
 				chordPlayer = chord -> ChordPlayingUtil.chordOscillation(chord);
 				break;
-			case 4:
+			case 6:
 				chordPlayer = chord -> ChordPlayingUtil.triplets(chord);
+				break;
+			case 7:
+				chordPlayer = chord -> ChordPlayingUtil.albertiTriplets(chord);
 				break;
 		}
 	}
