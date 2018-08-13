@@ -76,7 +76,7 @@ public class PrettyMelodyWriter implements MelodyWriter {
 				double duration = 0; // length of note or rest
 				if (noteOrRest && roll(10)) // don't rest for a half note
 					duration = 2/4.0; // half note
-				else if (roll(20))
+				else if (roll(15))
 					duration = 1/8.0; // eighth note
 				else
 					duration = 1/4.0; // quarter note
