@@ -21,7 +21,6 @@ import net.beadsproject.beads.ugens.Clock;
 import net.beadsproject.beads.ugens.Envelope;
 import net.beadsproject.beads.ugens.Gain;
 import net.beadsproject.beads.ugens.WavePlayer;
-import performance.Dynamic;
 import performance.MidiNote;
 import performance.instrument.Instrument;
 import theory.Measure;
@@ -75,7 +74,7 @@ public class BeadRunner {
 								composer.finishComposing();
 								clock.kill();
 								ac.out.kill();
-//								System.exit(0); // best termination solution? Beads seems obstinate
+								System.exit(0); // best termination solution? Beads seems obstinate
 								return;
 							}
 							Measure onTheFlyMeasure = composer.receiveInput(input);
