@@ -72,7 +72,7 @@ public class PrettyMelodyWriter implements MelodyWriter {
 			double time = 0;
 			int steps = 0;
 			while (time < measureLength) {
-				boolean noteOrRest = roll(95); // false means we rest; determination can/should be changed
+				boolean noteOrRest = roll(97); // false means we rest; determination can/should be changed
 				double duration = 0; // length of note or rest
 				if (noteOrRest && roll(10)) // don't rest for a half note
 					duration = 2/4.0; // half note
@@ -123,36 +123,6 @@ public class PrettyMelodyWriter implements MelodyWriter {
 				time += duration;
 			}
 			
-//			for (int beat=0; beat<measure.beats(); beat++) {
-////				int steps = risingMelody ? beat : -beat;
-//				MidiNote midiNote = new MidiNote(key.stepsAbove(steps, startingPitch), measure.beatValue());
-//				midiNote.setDynamic(Dynamic.PIANO);
-//				measure.setMetaInfo(measure.getMetaInfo() + " " + midiNote.getPitch());
-//				if (roll(ornamentChance)) {
-//					if (roll(appoggiaturaChance)) {
-//						measurePhrase.add(appoggiatura(midiNote, key));
-//						measure.setMetaInfo(measure.getMetaInfo() + "ap");
-//					}
-//					else if (roll(mordentChance)) {
-//						if (roll(50))
-//							measurePhrase.add(lowerMordent(midiNote, key));
-//						else
-//							measurePhrase.add(upperMordent(midiNote, key));
-//						measure.setMetaInfo(measure.getMetaInfo() + "md");
-//					} else if (beat==measure.beats()-1){
-//						measurePhrase.add(trill(midiNote, key));
-//						measure.setMetaInfo(measure.getMetaInfo() + "tr");
-//					} else {
-////						measurePhrase.add(turn(midiNote, key)); // removing turns for now
-////						measure.setMetaInfo(measure.getMetaInfo() + "tn");
-//						measurePhrase.add(midiNote);
-//						measure.setMetaInfo(measure.getMetaInfo() + "__");
-//					}
-//				} else {
-//					measurePhrase.add(midiNote);
-//					measure.setMetaInfo(measure.getMetaInfo() + "__");
-//				}
-//			}
 			phrase.add(measurePhrase);
 			
 //			measure.setMetaInfo(measure.getMetaInfo() + " " + measurePhrase.timesAndNotes());
