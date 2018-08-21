@@ -97,7 +97,6 @@ public class ChordProgressions {
 		}
 
 		public void put(ChordSpec from, ChordSpec to, int weight) {
-//			System.out.println("Putting: " + from.build().get().get(0) + " -> " + to.build().get().get(0));
 			ProgressionNode fromNode = get(from);
 			if (fromNode == null) {
 				fromNode = node(from);
@@ -113,7 +112,6 @@ public class ChordProgressions {
 		}
 		
 		protected ProgressionNode node(ChordSpec spec) {
-//			System.out.println("Creating progression node for spec: " + spec.build().get().get(0));
 			return new ProgressionNode(spec);
 		}
 
@@ -158,10 +156,6 @@ public class ChordProgressions {
 				this.chord = chord;
 				this.successors = new ArrayList<>();
 			}
-
-//			public int getScaleDegree() {
-//				return scaleDegree;
-//			}
 			
 			public ChordSpec getChord() {
 				return chord;
@@ -178,7 +172,6 @@ public class ChordProgressions {
 			}
 
 			public ProgressionNode getRandomSuccessor() {
-//				System.out.println("Successors: " + successors.size());
 				return successors.get((int) (Math.random()*successors.size()));
 			}
 
@@ -396,16 +389,5 @@ public class ChordProgressions {
 			}
 		}
 	}
-	
-//	public class KeyChangeProgression extends ChordProgression {
-//		
-//		private Key destinationKey;
-//		
-//		public KeyChangeProgression(Key fromKey, Key toKey) {
-//			super(fromKey);
-//			destinationKey = toKey; 
-//		}
-//		
-//	}
 	
 }
