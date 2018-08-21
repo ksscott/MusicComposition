@@ -300,10 +300,12 @@ public class ChordProgressions {
 			this.from = from;
 			this.to = to;
 			
-			for (ProgressionNode node : from)
+			// add "to" key first, which will record the chord's tonic note name, 
+			// as stored in the ProgressionNode, in the context of the "to" key
+			for (ProgressionNode node : to)
 				for (ProgressionNode succ : node.getSuccessors())
 					put(node.getChord(), succ.getChord());
-			for (ProgressionNode node : to)
+			for (ProgressionNode node : from)
 				for (ProgressionNode succ : node.getSuccessors())
 					put(node.getChord(), succ.getChord());
 		}
