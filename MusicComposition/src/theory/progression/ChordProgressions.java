@@ -181,7 +181,69 @@ public class ChordProgressions {
 		}
 	}
 	
-	public static class KeyChordProgression extends ChordProgression {
+	public static abstract class DestinationProgression extends ChordProgression {
+			
+			public DestinationProgression() {
+				super();
+			}
+			
+			protected abstract Comparator<List<ProgressionNode>> pathComparator();
+			
+			public List<ChordSpec> progress(ChordSpec fromChord, ChordSpec toChord, int maxChords) {
+				ProgressionNode fromNode = get(fromChord);
+				ProgressionNode toNode = get(toChord);
+				
+				// check inputs:
+				if (fromNode == null)
+					throw new IllegalArgumentException("Requested chord not present in this progression: " + fromChord);
+				if (toNode == null)
+					throw new IllegalArgumentException("Requested chord not present in this progression: " + toChord);
+				
+				ArrayList<ProgressionNode> list = new ArrayList<>();
+				list.add(fromNode);
+				List<ProgressionNode> result = recurse(list, toNode, maxChords);
+				if (result == null)
+					throw new RuntimeException("No valid progression found to fulfill the given requirements.");
+				
+				List<ChordSpec> chords = result.stream().map(ProgressionNode::getChord).collect(Collectors.toList());
+				return chords;
+			}
+			
+			/**
+			 * @param visited
+			 * @param destination
+			 * @param maxChords max number of chords to include, counting first and last
+			 * @return
+			 */
+			private List<ProgressionNode> recurse(List<ProgressionNode> visited, ProgressionNode destination, int maxChords) {
+				if (visited.size() >= maxChords)
+					return null;
+				ProgressionNode lastChord = visited.get(visited.size()-1);
+				if (lastChord.equals(destination) && visited.size() > 1)
+					return visited;
+				
+				List<List<ProgressionNode>> paths = new ArrayList<>();
+				
+				for (ProgressionNode successor : lastChord.getSuccessors()) {
+					// commenting to allow repeats:
+	//				if (visited.contains(successor))
+	//					continue;
+					ArrayList<ProgressionNode> visited2 = new ArrayList<>(visited);
+					visited2.add((ProgressionNode) successor);
+					paths.add(recurse(visited2, destination, maxChords));
+				}
+				
+				// prune dead ends:
+				paths.removeIf(path -> path == null);
+				
+				Collections.sort(paths, pathComparator());
+				
+				return paths.isEmpty() ? null : paths.get(0);
+			}
+			
+		}
+
+	public static class KeyChordProgression extends DestinationProgression {
 		
 		protected Key key;
 		
@@ -210,6 +272,12 @@ public class ChordProgressions {
 		}
 		
 		@Override
+		protected Comparator<List<ProgressionNode>> pathComparator() {
+			return new Comparator<List<ProgressionNode>>(){
+				@Override public int compare(List<ProgressionNode> o1, List<ProgressionNode> o2) { return 0; }};
+		}
+
+		@Override
 		public KeyChordProgression clone() {
 			KeyChordProgression clone = new KeyChordProgression(key);
 			
@@ -222,7 +290,7 @@ public class ChordProgressions {
 		}
 	}
 	
-	public static class KeyChange extends ChordProgression {
+	public static class KeyChange extends DestinationProgression {
 		
 		protected KeyChordProgression from;
 		protected KeyChordProgression to;
@@ -253,39 +321,6 @@ public class ChordProgressions {
 			return new KeyChangeProgressionNode(spec, inFromKey, inToKey);
 		}
 		
-		/**
-		 * @see #progress(int, int, int)
-		 * @param maxChords max number of chords to include, counting first and last
-		 * @return list of chords to play to change keys from tonic to tonic
-		 */
-		public List<ChordSpec> progress(int maxChords) {
-			return progress(1,1,maxChords);
-		}
-		
-		/**
-		 * @param fromChordDegree
-		 * @param toChordDegree
-		 * @param maxChords max number of chords to include, counting first and last
-		 * @return list of chords to play to change keys, including the first and last given
-		 */
-		public List<ChordSpec> progress(int fromChordDegree, int toChordDegree, int maxChords) {
-			KeyChangeProgressionNode fromNode = (KeyChangeProgressionNode) get(from.key.chordSpec(fromChordDegree));
-			KeyChangeProgressionNode toNode = (KeyChangeProgressionNode) get(to.key.chordSpec(toChordDegree));
-			
-			ArrayList<KeyChangeProgressionNode> list = new ArrayList<>();
-			list.add(fromNode);
-			List<KeyChangeProgressionNode> result = recurse(list, toNode, maxChords);
-			if (result == null)
-				throw new RuntimeException("No valid progression found to fulfill the given requirements.");
-			
-			List<ChordSpec> chords = result.stream().map(ProgressionNode::getChord).collect(Collectors.toList());
-			System.out.print("Key Change [" + getFromKey() + " -> " + getToKey() + "] ");
-			for (ChordSpec chord : chords)
-				System.out.print(chord + " ");
-			System.out.println();
-			return chords;
-		}
-		
 		public Key getFromKey() {
 			return from.getKey();
 		}
@@ -310,40 +345,40 @@ public class ChordProgressions {
 		}
 		
 		/**
-		 * @param visited
-		 * @param destination
+		 * @see #progress(int, int, int)
 		 * @param maxChords max number of chords to include, counting first and last
-		 * @return
+		 * @return list of chords to play to change keys from tonic to tonic
 		 */
-		private List<KeyChangeProgressionNode> recurse(List<KeyChangeProgressionNode> visited, KeyChangeProgressionNode destination, int maxChords) {
-			if (visited.get(visited.size()-1).equals(destination) && visited.size() > 1)
-				return visited;
-			if (visited.size() >= maxChords) {
-				return null;
-			}
-			
-			List<List<KeyChangeProgressionNode>> paths = new ArrayList<>();
-			
-			KeyChangeProgressionNode lastChord = visited.get(visited.size()-1);
-			for (ProgressionNode successor : lastChord.getSuccessors()) {
-				// commenting to allow repeats:
-//				if (visited.contains(successor))
-//					continue;
-				if (!(successor instanceof KeyChangeProgressionNode))
-					throw new IllegalStateException("Only KeyChangeProgressionNodes are allowed in a KeyChange.");
-				ArrayList<KeyChangeProgressionNode> visited2 = new ArrayList<>(visited);
-				visited2.add((KeyChangeProgressionNode) successor);
-				paths.add(recurse(visited2, destination, maxChords));
-			}
-			
-			// prune dead ends:
-			paths.removeIf(path -> path == null);
-			// require dominant just before next tonic
-			paths.removeIf(path -> to.key.scaleDegree(path.get(path.size()-2).getChord().getTonic()) != 5);
-			
-			Collections.sort(paths, new Comparator<List<KeyChangeProgressionNode>>(){
+		public List<ChordSpec> progress(int maxChords) {
+			return progress(1,1,maxChords);
+		}
+
+		/**
+		 * @param fromChordDegree
+		 * @param toChordDegree
+		 * @param maxChords max number of chords to include, counting first and last
+		 * @return list of chords to play to change keys, including the first and last given
+		 */
+		public List<ChordSpec> progress(int fromChordDegree, int toChordDegree, int maxChords) {
+			Key fromKey = getFromKey();
+			Key toKey = getToKey();
+			List<ChordSpec> progression = progress(fromKey.chordSpec(fromChordDegree), toKey.chordSpec(toChordDegree), maxChords);
+			System.out.print("Key Change [" + fromKey + " -> " + toKey + "] ");
+			for (ChordSpec chord : progression)
+				System.out.print(chord + " ");
+			System.out.println();
+			return progression;
+		}
+
+		@Override
+		protected Comparator<List<ProgressionNode>> pathComparator() {
+			return new Comparator<List<ProgressionNode>>(){
 				@Override
-				public int compare(List<KeyChangeProgressionNode> path1, List<KeyChangeProgressionNode> path2) {
+				public int compare(List<ProgressionNode> path1, List<ProgressionNode> path2) {
+					// prefer progressions that fill the entire requested length
+					if (path1.size() != path2.size())
+						return path2.size() - path1.size(); // puts longer path first
+					
 					// prefer non-repetitive progressions (fewer chord repeats)
 					long path1Duplicates = path1.size() - path1.stream().distinct().count();
 					long path2Duplicates = path2.size() - path2.stream().distinct().count();
@@ -352,23 +387,36 @@ public class ChordProgressions {
 					
 					// prefer ambiguous progressions (in both keys for longer)
 					long path1CommonChords = path1.stream()
+							.map(node -> (KeyChangeProgressionNode) node) // softly enforced in KeyChange
 							.filter(KeyChangeProgressionNode::isInFromKey)
 							.filter(KeyChangeProgressionNode::isInToKey)
 							.count();
 					long path2CommonChords = path2.stream()
+							.map(node -> (KeyChangeProgressionNode) node) // softly enforced in KeyChange
 							.filter(KeyChangeProgressionNode::isInFromKey)
 							.filter(KeyChangeProgressionNode::isInToKey)
 							.count();
 					if (path1CommonChords != path2CommonChords)
 						return (int) (path2CommonChords - path1CommonChords); // flipped to put greater one first
 					
+					// favor the path with a full cadence
+					Note path1PenultimateChordTonic = path1.get(path1.size()-2).getChord().getTonic();
+					Note path2PenultimateChordTonic = path2.get(path1.size()-2).getChord().getTonic();
+					int scaleDegree1 = to.getKey().scaleDegree(path1PenultimateChordTonic);
+					int scaleDegree2 = to.getKey().scaleDegree(path2PenultimateChordTonic);
+					if (scaleDegree1 == 5) {
+						if (scaleDegree2 == 5) {}
+						else { return -1; }
+					} else {
+						if (scaleDegree2 == 5) { return 1; }
+						else {}
+					}
+					
 					return 0; // TODO other criteria
 				}
-			});
-			
-			return paths.isEmpty() ? null : paths.get(0);
+			};
 		}
-		
+
 		public class KeyChangeProgressionNode extends ProgressionNode {
 
 			private boolean fromKey;
