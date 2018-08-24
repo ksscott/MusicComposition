@@ -25,7 +25,7 @@ public class ComposerThread extends Thread {
 			if (!paused)
 				if (strategy.iterate(composition))
 					paused = true;
-			try { Thread.sleep(100); } catch (Exception e) {}
+			try { Thread.sleep(50); } catch (Exception e) {}
 		}
 	}
 	

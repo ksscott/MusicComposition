@@ -19,7 +19,7 @@ import theory.progression.ChordProgressions.ChordProgression;
 import theory.progression.ChordProgressions.KeyChange;
 import theory.progression.ChordProgressions.KeyChordProgression;
 
-public abstract class ChordsSectionWriter implements ComposingStrategy {
+public abstract class ChordsSectionWriter extends IterativeComposingStrategy {
 		
 		protected Key key;
 		protected ChordSpec firstChord;
@@ -47,79 +47,76 @@ public abstract class ChordsSectionWriter implements ComposingStrategy {
 		 * 
 		 * @param composition the composition currently being composed
 		 */
-		protected abstract void onSectionsFilled(IncompleteComposition composition);
+		protected abstract ComposingStage onSectionsFilled(IncompleteComposition composition);
 		
 		@Override
-		public boolean iterate(IncompleteComposition composition) {
+		protected ComposingStage nextComposingStage(IncompleteComposition composition) {
 			int sectionSize = getNextSectionSize(composition);
+			if (composition.getFuture().size() > 2*sectionSize)
+				return null;
+			ComposingStage next = null;
 			
 			final Queue<Measure> future = composition.getFuture();
-			if (future.size() > 2*sectionSize)
-				return true; // no need to iterate now
 			Analysis analysis = composition.getAnalysis();
 			int measuresWithoutSection = composition.size() - analysis.lastEndOfSection();
 			int missingMeasures = -measuresWithoutSection;
-//			System.out.println("Missing measures: " + missingMeasures);
 			
-			if (missingMeasures <= 0 && future.size() <= sectionSize) {
-				// sections are full, write a new one
-				ChordsSection nextSection = new ChordsSection(sectionSize);
-				ChordSpec precedingChord;
-				if (measuresWithoutSection > 0) {
-					// measures at end of piece without a section
-					List<Measure> rogueMeasures = composition.getMeasures(
-							composition.size()-measuresWithoutSection+1, composition.size());
-					if (rogueMeasures.size() != 1)
-						throw new IllegalStateException("Somehow have the wrong number of rogue measures...");
-					nextSection.putKey(1, key); // relies on first-measure behavior of generateFirstMeasure() -> composeBar()
-					nextSection.putChord(1, firstChord); // making some assumptions here
-					precedingChord = null; // can pass null because nextSection is not empty
+			if (missingMeasures <= 0) {
+				if (future.size() <= sectionSize) {
+					// add a new section
+					return new ComposingStage() {
+						@Override
+						public void apply(IncompleteComposition composition) {
+							ChordsSection nextSection = new ChordsSection(sectionSize);
+							ChordSpec precedingChord;
+							if (measuresWithoutSection > 0) {
+								// measures at end of piece without a section
+								List<Measure> rogueMeasures = composition.getMeasures(
+										composition.size()-measuresWithoutSection+1, composition.size());
+								if (rogueMeasures.size() != 1)
+									throw new IllegalStateException("Somehow have the wrong number of rogue measures...");
+								nextSection.putKey(1, key); // relies on first-measure behavior of generateFirstMeasure() -> composeBar()
+								nextSection.putChord(1, firstChord); // making some assumptions here
+								precedingChord = null; // can pass null because nextSection is not empty
+							} else {
+								// get last chord
+								List<Section> sections = analysis.getSections();
+								ChordsSection section = (ChordsSection) sections.get(sections.size() - 1);
+								precedingChord = section.getChord(section.size());
+							}
+							fillSection(nextSection, nextSectionProgression(analysis), precedingChord);
+							analysis.addSection(nextSection);
+						}
+					};
 				} else {
-					// get last chord
-					List<Section> sections = analysis.getSections();
-					ChordsSection section = (ChordsSection) sections.get(sections.size() - 1);
-					precedingChord = section.getChord(section.size());
+					// write melody
+					return onSectionsFilled(composition);
 				}
-				fillSection(nextSection, nextSectionProgression(analysis), precedingChord);
-				analysis.addSection(nextSection);
-//				System.out.println("Adding new section.");
 			} else if (missingMeasures > 0) {
-//				System.out.println("Writing measure.");
 				// fill out the latest section with written measures
-				// compose measures to fill section
-				List<Section> sections = analysis.getSections();
-//				System.out.println("Sections: " + sections.size());
-				ChordsSection lastSection = (ChordsSection) sections.get(sections.size() - 1); // enforced softly in this class
-				if (lastSection.size() < missingMeasures)
-					throw new IllegalStateException("Something is wrong... must have miscounted.");
-				ChordSpec nextChord = lastSection.getChord(lastSection.size() - missingMeasures + 1);
-				Measure nextMeasure = composeBar(composition.getMeasure(composition.size()), nextChord);
-				Set<Key> keys = lastSection.getKeys(lastSection.size() - missingMeasures + 1);
-				String keyString =  "[";
-				for (Key key : keys)
-					keyString += " " + key + " ";
-				keyString += "] ";
-				nextMeasure.setMetaInfo(keyString + nextMeasure.getMetaInfo()); // flipped
-				future.add(nextMeasure); // XXX
-//				future.add(composeBar(composition)); // old implementation
-				int lastEndOfSection = analysis.lastEndOfSection();
-				if (composition.size() >= lastEndOfSection) {
-					onSectionsFilled(composition);
-//					// melody
-//					try {
-//						List<Measure> measuresWithoutMelody = future.stream()
-//								.filter(measure -> measure.getMeasureNumber() <= lastEndOfSection)
-//								.filter(measure -> !measure.getMetaInfo().contains("melody"))
-//								.collect(Collectors.toList());
-//						if (measuresWithoutMelody.size() >= 8) {
-//							writeMelody(measuresWithoutMelody);
-//						}
-//					} catch (Exception e) {
-//						e.printStackTrace();
-//					}
-				}
+				return new ComposingStage() {
+					@Override
+					public void apply(IncompleteComposition composition) {
+						List<Section> sections = analysis.getSections();
+//						System.out.println("Sections: " + sections.size());
+						ChordsSection lastSection = (ChordsSection) sections.get(sections.size() - 1); // enforced softly in this class
+						if (lastSection.size() < missingMeasures)
+							throw new IllegalStateException("Something is wrong... must have miscounted.");
+						ChordSpec nextChord = lastSection.getChord(lastSection.size() - missingMeasures + 1);
+						Measure nextMeasure = composeBar(composition.getMeasure(composition.size()), nextChord);
+						Set<Key> keys = lastSection.getKeys(lastSection.size() - missingMeasures + 1);
+						String keyString =  "[";
+						for (Key key : keys)
+							keyString += " " + key + " ";
+						nextMeasure.setMetaInfo(keyString + "] " + nextMeasure.getMetaInfo()); // flipped
+						future.add(nextMeasure); // XXX ?? I no longer remember why this is marked so severely
+//						if (composition.size() >= analysis.lastEndOfSection())
+//							onSectionsFilled(composition);
+					}
+				};
 			}
-			return future.size() > 16;
+			
+			return next;
 		}
 		
 		/**

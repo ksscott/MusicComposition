@@ -105,8 +105,9 @@ public class PolyphonicProgressionStrategy extends ChordsSectionWriter {
 	}
 
 	@Override
-	protected void onSectionsFilled(IncompleteComposition composition) {
+	protected ComposingStage onSectionsFilled(IncompleteComposition composition) {
 		// TODO maybe do nothing?
+		return null;
 	}
 
 	@Override

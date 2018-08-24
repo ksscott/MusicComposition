@@ -149,21 +149,27 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		}
 
 	@Override
-	protected void onSectionsFilled(IncompleteComposition composition) {
-		// melody
-		try {
-			List<Measure> measuresWithoutMelody = composition.getFuture().stream()
-//					.filter(measure -> measure.getMeasureNumber() <= lastEndOfSection) // don't worry about measures outside a section (shouldn't happen)
-					.filter(measure -> !measure.getMetaInfo().contains("melody"))
-					.collect(Collectors.toList());
-			if (measuresWithoutMelody.size() >= 8) {
-				writeMelody(measuresWithoutMelody);
+	protected ComposingStage onSectionsFilled(IncompleteComposition composition) {
+		return new ComposingStage() {
+			@Override
+			public void apply(IncompleteComposition composition) {
+				// TODO Auto-generated method stub
+				// melody
+				try {
+					List<Measure> measuresWithoutMelody = composition.getFuture().stream()
+							//					.filter(measure -> measure.getMeasureNumber() <= lastEndOfSection) // don't worry about measures outside a section (shouldn't happen)
+							.filter(measure -> !measure.getMetaInfo().contains("melody"))
+							.collect(Collectors.toList());
+					if (measuresWithoutMelody.size() >= 8) {
+						writeMelody(measuresWithoutMelody);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				changeChordStyle();
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		};
 		
-		changeChordStyle();
 	}
 
 	/**

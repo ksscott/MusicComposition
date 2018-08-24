@@ -38,6 +38,9 @@ public class Analysis {
 		return sections.stream().mapToInt(PieceSection::firstMeasureNumber).max().orElse(0);
 	}
 	
+	/**
+	 * @return measure number of the latest measure that is contained by a section
+	 */
 	public int lastEndOfSection() {
 		return sections.stream().mapToInt(PieceSection::lastMeasureNumber).max().orElse(0);
 	}
