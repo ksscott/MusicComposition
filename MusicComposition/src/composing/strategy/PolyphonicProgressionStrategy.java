@@ -91,12 +91,12 @@ public class PolyphonicProgressionStrategy extends ChordsSectionWriter {
 		for (MidiPitch pitch : nextChord) { // assume sorted
 			MidiNote nextNote = new MidiNote(pitch, measure.length());
 			if (lastMeasure != null) {
-				MidiNote.tieOver(lastNotes.get(index), nextNote); // assume sorted
-				heldNotes.put(voices.get(index), lastNotes.get(index));
+				MidiNote.tieOver(lastNotes.get(3 - index), nextNote); // assume sorted
+				heldNotes.put(voices.get(3 - index), lastNotes.get(3 - index));
 			} else {
-				nextNote.setTiesOver(true);
+				nextNote.setTiesOver(true); // hack
 			}
-			measure.add(voices.get(index++), nextNote);
+			measure.add(voices.get(3 - index++), nextNote);
 		}
 		
 		measure.setBpm(tempo.getBpm());
