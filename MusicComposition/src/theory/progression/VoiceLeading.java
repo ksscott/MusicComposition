@@ -4,7 +4,11 @@ import static composing.RandomUtil.modPos;
 import static composing.RandomUtil.roll;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import theory.Chord;
 import theory.ChordSpec;
@@ -98,6 +102,29 @@ public class VoiceLeading {
 		}
 		int lastChordCenter = (int) lastChord.get().stream().mapToInt(MidiPitch::get).average().orElse(0);
 		
+		// first voice lead pitches that are closer to chord center, then outer pitches later:
+		nonCommons.sort((one,two) -> {
+			return Math.abs(one.get() - lastChordCenter) - Math.abs(two.get() - lastChordCenter);
+		});
+		
+		// for each moving note, list which notes start with a perfect relationship to it
+		Map<MidiPitch,Set<MidiPitch>> perfectPairs = new HashMap<>();
+		Set<MidiPitch> forbiddenPitches = new HashSet<>();
+		for (MidiPitch pitch : nonCommons) {
+			perfectPairs.put(pitch, new HashSet<>());
+			for (MidiPitch other : nonCommons) {
+				if (pitch.equals(other))
+					continue;
+				int halfSteps = modPos(pitch.halfStepsTo(other), 12);
+				if (halfSteps == 0
+						|| halfSteps == 5
+						|| halfSteps == 7) {
+					// is a perfect relationship
+					perfectPairs.get(pitch).add(other);
+				}
+			}
+		}
+		
 		for (MidiPitch pitch : nonCommons) {
 			// attempt to stay as close to the original pitch as possible
 			// favor moving toward center
@@ -106,22 +133,32 @@ public class VoiceLeading {
 			boolean found = false;
 			for (int i=1; i<=12; i++) {
 				MidiPitch toward = pitch.above(i*towardCenter);
-				if (!retval.contains(toward)) { // have it already?
+				if (!retval.contains(toward) && !forbiddenPitches.contains(toward)) { // have it already? forbidden pitch?
 					for (MidiPitch acceptable : nextChord) { // in next chord?
 						if (modPos(acceptable.halfStepsTo(toward),12) == 0) {
 							retval.add(toward);
 							found = true;
+							for (MidiPitch other : perfectPairs.get(pitch)) {
+								// forbid perfect parallel motion
+								int interval = pitch.halfStepsTo(toward);
+								forbiddenPitches.add(other.above(interval));
+							}
 							break;
 						}
 					}
 					if (found) break;
 				}
 				MidiPitch away = pitch.above(i*awayFromCenter);
-				if (!retval.contains(away)) { // have it already?
+				if (!retval.contains(away) && !forbiddenPitches.contains(away)) { // have it already? forbidden pitch?
 					for (MidiPitch acceptable : nextChord) { // in next chord?
 						if (modPos(acceptable.halfStepsTo(away),12) == 0) {
 							retval.add(away);
 							found = true;
+							for (MidiPitch other : perfectPairs.get(pitch)) {
+								// forbid perfect parallel motion
+								int interval = pitch.halfStepsTo(away);
+								forbiddenPitches.add(other.above(interval));
+							}
 							break;
 						}
 					}
