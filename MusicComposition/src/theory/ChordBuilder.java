@@ -77,6 +77,10 @@ public class ChordBuilder {
 //		return this;
 //	}
 	
+	/**
+	 * @param scaleDegree scale degree of the note to add
+	 * @return this adjusted ChordBuilder
+	 */
 	public ChordBuilder addPitch(int scaleDegree) {
 		return addPitch(scaleDegree, Accidental.NONE);
 	}

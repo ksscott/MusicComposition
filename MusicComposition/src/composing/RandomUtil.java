@@ -25,6 +25,10 @@ public class RandomUtil {
 		return min + ((int) (Math.random()*max));
 	}
 	
+	/**
+	 * Performs the mod operation, always returning a non-negative result 
+	 * between zero (inclusing) and the given "mod" (exclusive)
+	 */
 	public static int modPos(int number, int mod) {
 		return ((number % mod) + mod) % mod;
 	}
