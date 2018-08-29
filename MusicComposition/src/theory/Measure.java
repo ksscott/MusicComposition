@@ -133,6 +133,11 @@ public class Measure implements Comparable<Measure> {
 	
 	// TODO add a remove(Phrase) method?
 	
+	/**
+	 * @return a set of times within the measure when some number of notes (or rests) is played. 
+	 * Each time is a Double representing an offset into the measure having a unit of whole notes. 
+	 * For example, a time of .75 would mean an action occurs on the fourth beat of a 4/4 measure. 
+	 */
 	public Set<Double> getTimes() {
 		Set<Double> retval = new HashSet<>();
 		for (InstrumentMeasure instrument : instruments)

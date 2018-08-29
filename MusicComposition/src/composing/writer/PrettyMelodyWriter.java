@@ -93,7 +93,7 @@ public class PrettyMelodyWriter implements MelodyWriter {
 				MidiNote midiNote = new MidiNote(key.stepsAbove(steps, startingPitch), duration);
 				steps += risingMelody ? 1 : -1;
 				
-				midiNote.setDynamic(Dynamic.MEZZO_PIANO);
+//				midiNote.setDynamic(Dynamic.MEZZO_PIANO);
 				measure.setMetaInfo(measure.getMetaInfo() + " " + midiNote.getPitch());
 				if (roll(ornamentChance)) {
 					double ornamentLength = Math.min(1/8.0, duration/2.0);

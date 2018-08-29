@@ -15,6 +15,7 @@ import composing.RandomUtil;
 import composing.writer.ChordPlayingUtil;
 import composing.writer.PrettyMelodyWriter;
 import performance.Dynamic;
+import performance.MidiAction;
 import performance.MidiNote;
 import performance.Tempo;
 import performance.instrument.Instrument;
@@ -158,8 +159,8 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 				try {
 					List<Measure> measuresWithoutMelody = composition.getFuture().stream()
 							//					.filter(measure -> measure.getMeasureNumber() <= lastEndOfSection) // don't worry about measures outside a section (shouldn't happen)
-							.filter(measure -> !measure.getMetaInfo().contains("melody"))
-							.collect(Collectors.toList());
+							.filter(measure -> !measure.getMetaInfo().contains("melody")) // FIXME got NPE here, believed null measure
+							.collect(Collectors.toList()); // FIXME also got concurrent mod here, probably wrote a measure during this operation
 					if (measuresWithoutMelody.size() >= 8) {
 						writeMelody(measuresWithoutMelody);
 					}
@@ -194,6 +195,17 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		
 //		ChordPlayingUtil.arpeggiateChordHalfBeats(voiceLeadChord, instrument, measure);
 		Phrase chordPhrase = chordPlayer.apply(voiceLeadChord);
+		
+		// lower dynamic of all background notes
+//		for (List<MidiAction> list : chordPhrase.getNotes().values()) {
+//			for (MidiAction action : list) {
+//				if (action instanceof MidiNote) {
+//					MidiNote note = (MidiNote) action;
+//					note.setDynamic(Dynamic.below(note.getDynamic()));
+//				}
+//			}
+//		}
+		
 		measure.addInstrument(instrument);
 		// clunky phrase repetition, truncated ending:
 		while (true) {
