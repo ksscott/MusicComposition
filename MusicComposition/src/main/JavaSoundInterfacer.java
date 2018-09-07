@@ -46,6 +46,7 @@ public class JavaSoundInterfacer {
 			if (measures.size() < 1)
 				measures.add(composer.writeNextMeasure());
 			measure = measures.poll();
+			System.out.println("[Measure: " + measure.getMeasureNumber() + "] " + measure.getMetaInfo());
 			System.out.println(measure.stringDrawing());
 			//		System.out.println("Notes: " + measure.getNotes(measure1.getInstruments().iterator().next(), 0, measure1.length()));
 			List<Double> times = new ArrayList<>(measure.getTimes());
