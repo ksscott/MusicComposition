@@ -1,10 +1,12 @@
 package main;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.Scanner;
 
 import javax.sound.midi.Instrument;
 import javax.sound.midi.InvalidMidiDataException;
@@ -21,6 +23,21 @@ import performance.MidiNote;
 import theory.Measure;
 
 public class JavaSoundInterfacer {
+	
+	private static final String openingString = "\uD834\uDD1E Live Music Composition \uD834\uDD1E\n"
+											  + "Commands:\n"
+											  + "repertoire\n"
+											  + "restart\n"
+											  + "request [piece name]\n"
+											  + "switch\n"
+											  + "tempo [up or down]\n"
+											  + "quit\n";
+	private static final String closingString = "\uD834\uDD1E Terminating Live Music Composition \uD834\uDD1E";
+	
+	private static Queue<String> userInputs = new PriorityQueue<>();
+	/** whether user input queue is empty */
+	private static boolean empty = true;
+	private static final List<String> STOP_COMMANDS = Arrays.asList(new String[] { "stop", "end", "quit", "kill" });
 
 	private static Synthesizer synthesizer;
 	private static Receiver synthRcvr;
@@ -39,10 +56,14 @@ public class JavaSoundInterfacer {
 		Queue<Measure> measures = new PriorityQueue<>();
 		Measure measure;
 		Composer composer = new Composer();
+		InputThread inputThread = new InputThread();
+		inputThread.start();
+		
+		System.out.println(openingString);
 		
 		measures.add(composer.beginComposing());
 		while (true) {
-			Double ticker = 0.0;
+			Double ticker = 0.0; // TODO align this to currentTimeMillis() ? could prevent possible stutter
 			if (measures.size() < 1)
 				measures.add(composer.writeNextMeasure());
 			measure = measures.poll();
@@ -57,6 +78,21 @@ public class JavaSoundInterfacer {
 			// millis = time / beatValue / bpm * (60,000 millis/min)
 
 			for (Double time : times) {
+				if (!empty) {
+					final String input = receiveUserInput();
+					if (STOP_COMMANDS.contains(input)) {
+						// TODO figure out best stopping procedure
+						inputThread.end();
+						composer.finishComposing();
+						System.out.println(closingString);
+						System.exit(0); // best termination solution?
+						return; // dead code
+					}
+					Measure onTheFlyMeasure = composer.receiveInput(input);
+					if (onTheFlyMeasure != null)
+						measures.add(onTheFlyMeasure);
+				}
+				
 				// check if time < ticker? should be unnecessary
 				if (ticker < time)
 					waitWholeNotes(time - ticker, beatValue, bpm);
@@ -160,6 +196,42 @@ public class JavaSoundInterfacer {
 			Thread.sleep(millis);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	private static synchronized void addUserInput(String input) {
+		userInputs.add(input);
+		empty = false;
+	}
+	
+	private static synchronized String receiveUserInput() {
+		String input = userInputs.poll();
+		if (userInputs.isEmpty())
+			empty = true;
+		return input;
+	}
+	
+	@SuppressWarnings("unused")
+	private static synchronized List<String> receiveAllUserInputs() {
+		List<String> inputs = new ArrayList<>(userInputs);
+		empty = true;
+		return inputs;
+	}
+	
+public static class InputThread extends Thread {
+		
+		private boolean stopped;
+		
+		@Override
+		public void run() {
+			Scanner scanner = new Scanner(System.in);
+			while(!stopped)
+				addUserInput(scanner.nextLine());
+			scanner.close();
+		}
+		
+		public void end() {
+			stopped = true;
 		}
 	}
 	

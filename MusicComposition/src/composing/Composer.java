@@ -64,6 +64,12 @@ public class Composer {
 			return null;
 		ComposingStrategy strategy;
 		switch (command) {
+			case REPERTOIRE:
+				String rep = "Repertoire:\n";
+				for (ComposingStrategy trick : oldTricks)
+					rep += trick.toString() + "\n";
+				System.out.println(rep);
+				break;
 			case RESTART:
 				strategy = thread.getStrategy();
 				finishComposing();
@@ -116,6 +122,9 @@ public class Composer {
 	}
 	
 	private enum UserInput {
+		
+		/** list known pieces */
+		REPERTOIRE(startsWithAny("repertoire", "rep", "list", "pieces")),
 
 		/** restart the current piece */
 		RESTART(startsWithAny("restart", "reset")),
