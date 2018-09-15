@@ -121,7 +121,7 @@ public class BeadRunner {
 						int countThisMeasure = (int) (count - (startOfMeasure*c.getTicksPerBeat()));
 //						int beatThisMeasure = beat - startOfMeasure;
 //						int beats = measure.beats();
-						double beatValue = measure.beatValue();
+						double beatValue = measure.beatValue().duration();
 						double time = (double) countThisMeasure*beatValue/((double) c.getTicksPerBeat());
 						double nextTime = (double) (countThisMeasure+1)*beatValue/((double) c.getTicksPerBeat());
 						float millisPerBeat = c.getIntervalUGen().getValue();
@@ -161,7 +161,7 @@ public class BeadRunner {
 							pitch = note.getPitch();
 //							System.out.print(pitch + " "); // for old note printing method
 							float freq = Pitch.mtof(pitch);
-							int durationMillis = (int) (millisPerWholeNote * note.getDuration()); // (millis / whole-note) * whole-notes
+							int durationMillis = (int) (millisPerWholeNote * note.duration()); // (millis / whole-note) * whole-notes
 							float volume = (float) note.getDynamic().volume();
 							Gain g;
 							

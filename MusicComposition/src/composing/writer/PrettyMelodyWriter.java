@@ -18,6 +18,7 @@ import theory.Key;
 import theory.Measure;
 import theory.MidiPitch;
 import theory.Note;
+import theory.NoteDuration;
 import theory.analysis.Phrase;
 
 public class PrettyMelodyWriter implements MelodyWriter {
@@ -73,20 +74,23 @@ public class PrettyMelodyWriter implements MelodyWriter {
 			int steps = 0;
 			while (time < measureLength) {
 				boolean noteOrRest = roll(97); // false means we rest; determination can/should be changed
-				double duration = 0; // length of note or rest
+				NoteDuration duration; // length of note or rest
 				if (noteOrRest && roll(10)) // don't rest for a half note
-					duration = 2/4.0; // half note
+					duration = NoteDuration.half(); // half note
 				else if (roll(15))
-					duration = 1/8.0; // eighth note
+					duration = NoteDuration.eighth(); // eighth note
 				else
-					duration = 1/4.0; // quarter note
+					duration = NoteDuration.quarter(); // quarter note
 				// else, eighth notes or something
-				duration = Math.min(duration, measureLength-time); // truncate at end of measure
+//				duration = NoteDuration.min(duration, measureLength-time); // truncate at end of measure
+				// HACK:
+				while(duration.duration() > measureLength-time)
+					duration = duration.halved();
 				
 				if (!noteOrRest) { // rest
 					measurePhrase.add(new MidiRest(duration));
 					measure.setMetaInfo(measure.getMetaInfo() + " rest");
-					time += duration;
+					time += duration.duration();
 					continue;
 				}
 				
@@ -96,7 +100,7 @@ public class PrettyMelodyWriter implements MelodyWriter {
 //				midiNote.setDynamic(Dynamic.MEZZO_PIANO);
 				measure.setMetaInfo(measure.getMetaInfo() + " " + midiNote.getPitch());
 				if (roll(ornamentChance)) {
-					double ornamentLength = Math.min(1/8.0, duration/2.0);
+					NoteDuration ornamentLength = NoteDuration.min(NoteDuration.eighth(), duration.halved());
 					if (roll(appoggiaturaChance)) {
 						measurePhrase.add(appoggiatura(midiNote, key, ornamentLength), time);
 						measure.setMetaInfo(measure.getMetaInfo() + "ap");
@@ -107,7 +111,7 @@ public class PrettyMelodyWriter implements MelodyWriter {
 						else
 							measurePhrase.add(upperMordent(midiNote, key, ornamentLength), time);
 						measure.setMetaInfo(measure.getMetaInfo() + "md");
-					} else if (time >= measureLength-measure.beatValue()){ // last beat
+					} else if (time >= measureLength-measure.beatValue().duration()){ // last beat
 						measurePhrase.add(trill(midiNote, key), time);
 						measure.setMetaInfo(measure.getMetaInfo() + "tr");
 					} else {
@@ -120,7 +124,7 @@ public class PrettyMelodyWriter implements MelodyWriter {
 					measurePhrase.add(midiNote, time);
 					measure.setMetaInfo(measure.getMetaInfo() + "__");
 				}
-				time += duration;
+				time += duration.duration();
 			}
 			
 			phrase.add(measurePhrase);

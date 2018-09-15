@@ -74,7 +74,7 @@ public class JavaSoundInterfacer {
 			Collections.sort(times);
 
 			double bpm = measure.getBpm();
-			double beatValue = measure.beatValue();
+			double beatValue = measure.beatValue().duration();
 			// millis = time / beatValue / bpm * (60,000 millis/min)
 
 			for (Double time : times) {

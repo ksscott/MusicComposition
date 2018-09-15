@@ -9,6 +9,7 @@ import performance.instrument.Instrument;
 import theory.Chord;
 import theory.Measure;
 import theory.MidiPitch;
+import theory.NoteDuration;
 import theory.analysis.Phrase;
 
 public class ChordPlayingUtil {
@@ -18,13 +19,13 @@ public class ChordPlayingUtil {
 	/** Modifies the given measure */
 	public static void playChordOnBeats(Chord chord, Instrument instrument, Measure measure) {
 		measure.addInstrument(instrument);
-		double beatValue = measure.beatValue();
+		NoteDuration beatValue = measure.beatValue();
 		for (int beat=0; beat<measure.beats(); beat++) {
 			for (MidiPitch pitch : chord) {
 				MidiNote note = new MidiNote(pitch, beatValue);
 				if (beat != 0)
 					note.setDynamic(Dynamic.below(note.getDynamic()));
-				measure.add(instrument, note, beat*beatValue);
+				measure.add(instrument, note, beat*beatValue.duration());
 			}
 		}
 	}
@@ -33,7 +34,7 @@ public class ChordPlayingUtil {
 	public static Phrase playChordOnBeats(Chord chord) {
 		Phrase phrase = new Phrase();
 		for (MidiPitch pitch : chord)
-			phrase.add(new MidiNote(pitch, 1/4.0), 0);
+			phrase.add(new MidiNote(pitch, NoteDuration.quarter()), 0);
 		return phrase;
 	}
 	
@@ -41,16 +42,16 @@ public class ChordPlayingUtil {
 	public static void arpeggiateChordHalfBeats(Chord chord, Instrument instrument, Measure measure) {
 		Iterator<MidiPitch> arpeggiator = chord.arpeggiator();
 		measure.addInstrument(instrument);
-		double beatValue = measure.beatValue();
-		double noteLength = beatValue/2.0;
+		NoteDuration beatValue = measure.beatValue();
+		NoteDuration noteLength = beatValue.halved();
 		for (int beat=0; beat<measure.beats(); beat++) {
 			MidiNote note1 = new MidiNote(arpeggiator.next(), noteLength);
 			MidiNote note2 = new MidiNote(arpeggiator.next(), noteLength);
 			if (beat != 0)
 				note1.setDynamic(Dynamic.below(note1.getDynamic()));
 			note2.setDynamic(Dynamic.below(note1.getDynamic()));
-			measure.add(instrument,  note1, beat*beatValue);
-			measure.add(instrument,  note2, beat*beatValue + noteLength);
+			measure.add(instrument,  note1, beat*beatValue.duration());
+			measure.add(instrument,  note2, beat*beatValue.duration() + noteLength.duration());
 		}
 	}
 	
@@ -61,7 +62,7 @@ public class ChordPlayingUtil {
 		MidiPitch first = arpeggiator.next();
 		MidiPitch next = first;
 		do {
-			phrase.add(new MidiNote(next, 1/8.0));
+			phrase.add(new MidiNote(next, NoteDuration.eighth()));
 			next = arpeggiator.next();
 		} while (!next.equals(first));
 		return phrase;
@@ -73,8 +74,8 @@ public class ChordPlayingUtil {
 		if (chord.size() != 3)
 			throw new IllegalArgumentException("Only chords with exactly three pitches are supported.");
 		measure.addInstrument(instrument);
-		double beatValue = measure.beatValue();
-		double noteLength = beatValue/3.0;
+		NoteDuration beatValue = measure.beatValue();
+		NoteDuration noteLength = beatValue.halved().toTriplet(true);
 		for (int beat=0; beat<measure.beats(); beat++) {
 			for (int i=0; i<pitches.size(); i++) {
 				MidiNote note = new MidiNote(pitches.get(i), noteLength);
@@ -82,7 +83,7 @@ public class ChordPlayingUtil {
 					note.setDynamic(Dynamic.above(note.getDynamic()));
 				if (beat != 0)
 					note.setDynamic(Dynamic.below(note.getDynamic()));
-				measure.add(instrument, note, beat*beatValue + i*noteLength);
+				measure.add(instrument, note, beat*beatValue.duration() + i*noteLength.duration());
 			}
 		}
 	}
@@ -94,7 +95,7 @@ public class ChordPlayingUtil {
 		Phrase phrase = new Phrase();
 		
 		for (MidiPitch pitch : chord)
-			phrase.add(new MidiNote(pitch, 1/12.0));
+			phrase.add(new MidiNote(pitch, NoteDuration.eighth().toTriplet(true)));
 		
 		return phrase;
 	}
@@ -104,8 +105,8 @@ public class ChordPlayingUtil {
 		if (chord.size() != 3)
 			throw new IllegalArgumentException("Only chords with exactly three pitches are supported.");
 		measure.addInstrument(instrument);
-		double beatValue = measure.beatValue();
-		double noteLength = beatValue/3.0;
+		NoteDuration beatValue = measure.beatValue();
+		NoteDuration noteLength = beatValue.halved().toTriplet(true);
 		for (int beat=0; beat<measure.beats(); beat++) {
 			for (int i=0; i<3; i++) {
 				Iterator<MidiPitch> albertiBass = chord.albertiBass();
@@ -114,7 +115,7 @@ public class ChordPlayingUtil {
 					note.setDynamic(Dynamic.above(note.getDynamic()));
 				if (beat != 0)
 					note.setDynamic(Dynamic.below(note.getDynamic()));
-				measure.add(instrument, note, beat*beatValue + i*noteLength);
+				measure.add(instrument, note, beat*beatValue.duration() + i*noteLength.duration());
 			}
 		}
 	}
@@ -127,7 +128,7 @@ public class ChordPlayingUtil {
 		
 		Iterator<MidiPitch> albertiBass = chord.albertiBass();
 		for (int i=0; i<3; i++)
-			phrase.add(new MidiNote(albertiBass.next(), 1/12.0));
+			phrase.add(new MidiNote(albertiBass.next(), NoteDuration.eighth().toTriplet(true)));
 		
 		return phrase;
 	}
@@ -136,16 +137,16 @@ public class ChordPlayingUtil {
 	public static void albertiBassHalfBeats(Chord chord, Instrument instrument, Measure measure) {
 		Iterator<MidiPitch> albertiBass = chord.albertiBass();
 		measure.addInstrument(instrument);
-		double beatValue = measure.beatValue();
-		double noteLength = beatValue/2.0;
+		NoteDuration beatValue = measure.beatValue();
+		NoteDuration noteLength = beatValue.halved();
 		for (int beat=0; beat<measure.beats(); beat++) {
 			MidiNote note1 = new MidiNote(albertiBass.next(), noteLength);
 			MidiNote note2 = new MidiNote(albertiBass.next(), noteLength);
 			if (beat != 0)
 				note1.setDynamic(Dynamic.below(note1.getDynamic()));
 			note2.setDynamic(Dynamic.below(note1.getDynamic()));
-			measure.add(instrument,  note1, beat*beatValue);
-			measure.add(instrument,  note2, beat*beatValue + noteLength);
+			measure.add(instrument,  note1, beat*beatValue.duration());
+			measure.add(instrument,  note2, beat*beatValue.duration() + noteLength.duration());
 		}
 	}
 	
@@ -156,7 +157,7 @@ public class ChordPlayingUtil {
 		MidiPitch first = albertiBass.next();
 		MidiPitch next = first;
 		do {
-			phrase.add(new MidiNote(next, 1/8.0));
+			phrase.add(new MidiNote(next, NoteDuration.eighth()));
 			next = albertiBass.next();
 		} while (!next.equals(first));
 		return phrase;
@@ -171,8 +172,8 @@ public class ChordPlayingUtil {
 		
 		MidiPitch bass = pitches.get(0);
 		List<MidiPitch> rest = pitches.subList(1, pitches.size());
-		double beatValue = measure.beatValue();
-		double noteLength = beatValue/2.0;
+		NoteDuration beatValue = measure.beatValue();
+		NoteDuration noteLength = beatValue.halved();
 		
 		for (int beat=0; beat<measure.beats(); beat++) {
 			Dynamic dynamic = null;
@@ -180,12 +181,12 @@ public class ChordPlayingUtil {
 				MidiNote chordNote = new MidiNote(pitch, noteLength);
 				if (beat != 0)
 					chordNote.setDynamic(Dynamic.below(chordNote.getDynamic()));
-				measure.add(instrument, chordNote, beat*beatValue);
+				measure.add(instrument, chordNote, beat*beatValue.duration());
 				dynamic = chordNote.getDynamic();
 			}
 			MidiNote bassNote = new MidiNote(bass, noteLength);
 			bassNote.setDynamic(Dynamic.below(dynamic));
-			measure.add(instrument, bassNote, beat*beatValue + noteLength);
+			measure.add(instrument, bassNote, beat*beatValue.duration() + noteLength.duration());
 		}
 	}
 	
@@ -200,8 +201,8 @@ public class ChordPlayingUtil {
 		List<MidiPitch> rest = pitches.subList(1, pitches.size());
 		
 		for (MidiPitch pitch : rest)
-			phrase.add(new MidiNote(pitch, 1/8.0), 0); // add all on the beat
-		phrase.add(new MidiNote(bass, 1/8.0)); // add after the beat
+			phrase.add(new MidiNote(pitch, NoteDuration.eighth()), 0); // add all on the beat
+		phrase.add(new MidiNote(bass, NoteDuration.eighth())); // add after the beat
 		
 		return phrase;
 	}

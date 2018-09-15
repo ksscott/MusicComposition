@@ -11,6 +11,7 @@ import theory.Accidental;
 import theory.Key;
 import theory.Measure;
 import theory.Note;
+import theory.NoteDuration;
 import theory.Scale;
 
 public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
@@ -67,7 +68,7 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 //		}).max(Double::compare).orElse(0.0);
 		
 		// TODO compose improvisational magic here!
-		double beatValue = measure.beatValue();
+		NoteDuration beatValue = measure.beatValue();
 		
 		// change character every measure
 		int downBeatChance = random(45, 90);
@@ -89,16 +90,16 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 			
 			if (roll(downBeatChance)) {
 				// play on downbeat
-				final MidiNote note = new MidiNote(pitches[noteIndex], 2/3.0*beatValue);
+				final MidiNote note = new MidiNote(pitches[noteIndex], beatValue.toTriplet(true));
 				note.setDynamic(Dynamic.MEZZO_PIANO);
-				measure.add(trumpet, note, i*beatValue);
+				measure.add(trumpet, note, i*beatValue.duration());
 				noteIndex += step();
 				noteIndex = (noteIndex + pitches.length) % pitches.length;
 			}
 			if (roll(offBeatChance)) {
 				// play synchopation
-				final double location = i*beatValue + 2/3.0*beatValue;
-				measure.add(trumpet, new MidiNote(pitches[noteIndex], 1/3.0*beatValue), location);
+				final double location = i*beatValue.duration() + beatValue.toTriplet(true).duration();
+				measure.add(trumpet, new MidiNote(pitches[noteIndex], beatValue.halved().toTriplet(true)), location);
 				noteIndex += step();
 				noteIndex = (noteIndex + pitches.length) % pitches.length;
 			}
@@ -108,14 +109,14 @@ public class TwelveBarImprovStrategy extends TwelveBarBluesStrategy {
 	}
 	
 	private Measure composeBarTwelve(Measure measure) {
-		double beatValue = measure.beatValue();
+		NoteDuration beatValue = measure.beatValue();
 		for (int i=0; i<measure.beats(); i++) {
 			if (i != 0) {
-				MidiNote note = new MidiNote(tonic.get() + octavesUp*12 + 7, 1/3.0*beatValue);
-				measure.add(trumpet, note, i*beatValue);
+				MidiNote note = new MidiNote(tonic.get() + octavesUp*12 + 7, beatValue.halved().toTriplet(true));
+				measure.add(trumpet, note, i*beatValue.duration());
 			}
-			MidiNote note = new MidiNote(tonic.get() + octavesUp*12 + 7, 1/3.0*beatValue);
-			final double location = i*beatValue + 2/3.0*beatValue;
+			MidiNote note = new MidiNote(tonic.get() + octavesUp*12 + 7, beatValue.halved().toTriplet(true));
+			final double location = i*beatValue.duration() + beatValue.toTriplet(true).duration();
 			measure.add(trumpet, note, location);
 		}
 		return measure;

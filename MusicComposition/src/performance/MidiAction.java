@@ -1,24 +1,37 @@
 package performance;
 
+import theory.NoteDuration;
+
 public class MidiAction implements Cloneable {
 
-	protected double duration;
+	protected NoteDuration duration;
 	
-	public MidiAction(double duration) {
-		if (duration <= 0)
-			throw new IllegalArgumentException("MidiNote must have a positive duration.");
+	public MidiAction(NoteDuration duration) {
 		this.duration = duration;
 	}
 
-	public double getDuration() {
+	public NoteDuration getDuration() {
 		return duration;
 	}
 	
-	/** Returns a new clone, lengthened by the given timeRatio */
-	public MidiAction expand(double timeRatio) {
-		if (timeRatio <= 0)
-			throw new IllegalArgumentException("Only positive ratios accepted for expansions.");
-		return new MidiAction(timeRatio*duration);
+	public double duration() {
+		return duration.duration();
+	}
+	
+//	/** Returns a new clone, lengthened by the given timeRatio */
+//	public MidiAction expand(double timeRatio) {
+//		if (timeRatio <= 0)
+//			throw new IllegalArgumentException("Only positive ratios accepted for expansions.");
+//		return new MidiAction(timeRatio*duration);
+//	}
+	
+	/**
+	 * @param power multiply the duration of this action by 2 ^ (given power)
+	 * @return a clone, lengthened or contracted by the given power of 2
+	 * @seealso {@link NoteDuration#expand(int)}
+	 */
+	public MidiAction expand(int power) {
+		return new MidiAction(duration.expand(power));
 	}
 	
 	@Override
@@ -28,7 +41,7 @@ public class MidiAction implements Cloneable {
 	
 	public static class MidiRest extends MidiAction {
 		
-		public MidiRest(double duration) {
+		public MidiRest(NoteDuration duration) {
 			super(duration);
 		}
 		

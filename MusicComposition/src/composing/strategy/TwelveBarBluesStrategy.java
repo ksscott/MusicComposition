@@ -9,6 +9,7 @@ import performance.instrument.Instrument;
 import theory.Measure;
 import theory.MidiPitch;
 import theory.Note;
+import theory.NoteDuration;
 import theory.Scale;
 import theory.ScaleImpl;
 
@@ -73,22 +74,18 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 	}
 
 	private Measure composeArpeggioA(int root) {
-		int beats = 4;
-		double beatValue = 1/4.0;
-		Measure measure = new Measure(beats, beatValue);
+		Measure measure = Measure.commonTime();
 		measure.addInstrument(bass);
-		for (int i=0; i<beats; i++)
-			measure.add(bass, new MidiNote(baseline.intervals()[i] + root, beatValue));
+		for (int i=0; i<4; i++)
+			measure.add(bass, new MidiNote(baseline.intervals()[i] + root, NoteDuration.quarter()));
 		return measure;
 	}
 
 	private Measure composeArpeggioB(int root) {
-		int beats = 4;
-		double beatValue = 1/4.0;
-		Measure measure = new Measure(beats, beatValue);
+		Measure measure = Measure.commonTime();
 		measure.addInstrument(bass);
-		for (int i=0; i<beats; i++)
-			measure.add(bass, new MidiNote(baseline.intervals()[4-i] + root, beatValue));
+		for (int i=0; i<4; i++)
+			measure.add(bass, new MidiNote(baseline.intervals()[4-i] + root, NoteDuration.quarter()));
 		return measure;
 	}
 	

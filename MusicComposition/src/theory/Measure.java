@@ -1,5 +1,6 @@
 package theory;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -19,8 +20,7 @@ import theory.analysis.Phrase;
 public class Measure implements Comparable<Measure> {
 	
 	// time signature:
-	private int beats;
-	private double beatValue;
+	private TimeSignature timeSignature;
 	
 	int measureNumber;
 	private double bpm = 60;
@@ -29,22 +29,17 @@ public class Measure implements Comparable<Measure> {
 	
 	private Set<InstrumentMeasure> instruments;
 	
-	public Measure(int beats, double beatValue) {
-		if (beats < 1)
-			throw new IllegalArgumentException("Measures must have at least one beat.");
-		if (beatValue <= 0 )
-			throw new IllegalArgumentException("Measure beats must have a positive duration.");
-		this.beats = beats;
-		this.beatValue = beatValue;
+	public Measure(TimeSignature timeSignature) {
+		this.timeSignature = timeSignature;
 		this.instruments = new HashSet<>();
 	}
 	
 	/** @return number of beats in this measure */
-	public int beats() { return beats; }
+	public int beats() { return timeSignature.getBeats(); }
 	/** @return duration of each beat as a fraction of a whole note */
-	public double beatValue() { return beatValue; }
+	public NoteDuration beatValue() { return timeSignature.getBeatValue(); }
 	/** @return duration of this measure as a fraction of a whole note, equivalent to fraction created by time signature */
-	public double length() { return beats()*beatValue(); }
+	public double length() { return beats()*beatValue().duration(); }
 
 	public int getMeasureNumber() { return measureNumber; }
 	public void setMeasureNumber(int number) { this.measureNumber = number; }
@@ -225,7 +220,10 @@ public class Measure implements Comparable<Measure> {
 						instString += "   "; // TODO this assumes all 2-digit pitches
 						continue;
 					}
-					instString += " " + notes.get(row).getPitch();
+					instString += " " + notes.get(row).getPitch() 
+//							+ " " + time 
+							+ " " + notes.get(row).getDynamic().notation()
+							;
 				}
 				instString += System.lineSeparator();
 			}
@@ -238,6 +236,10 @@ public class Measure implements Comparable<Measure> {
 		}
 		
 		return drawing;
+	}
+	
+	public static Measure commonTime() {
+		return new Measure(new TimeSignature(4, NoteDuration.quarter()));
 	}
 	
 	public static void writeOnto(Instrument instrument, Phrase phrase, List<Measure> measures, double offset) { // FIXME honor the offset
@@ -311,7 +313,7 @@ public class Measure implements Comparable<Measure> {
 		
 		// are these necessary?
 		public int beats() { return Measure.this.beats(); }
-		public double beatValue() { return Measure.this.beatValue(); }
+		public NoteDuration beatValue() { return Measure.this.beatValue(); }
 //		public double length() { return Measure.this.length(); }
 		
 		public List<MidiAction> getActions(double time) {
@@ -366,7 +368,7 @@ public class Measure implements Comparable<Measure> {
 		public void add(MidiAction note, double offset) {
 			if (offset < 0)
 				throw new IllegalArgumentException("Cannot add notes before start of measure.");
-			if (offset + note.getDuration() > beats * beatValue)
+			if (offset + note.duration() > length())
 				throw new IllegalArgumentException("Note would end after end of measure."
 						+ " Note of duration " + note.getDuration() + " at time " + offset);
 			
@@ -382,13 +384,14 @@ public class Measure implements Comparable<Measure> {
 		}
 		
 		public void add(Phrase phrase) {
+//			System.out.println("Adding phrase at time: " + latestNoteEnd());
 			add(phrase, latestNoteEnd());
 		}
 		
 		public void add(Phrase phrase, double offset) {
 			if (offset + phrase.getStart() < 0)
 				throw new IllegalArgumentException("No part of the phrase can start before the start of the measure.");
-			if (offset + phrase.getEnd() > beats * beatValue)
+			if (offset + phrase.getEnd() > length())
 				throw new IllegalArgumentException("Phrase would end after end of measure.");
 
 			Map<Double, List<MidiAction>> phraseNotes = phrase.getNotes();
@@ -416,7 +419,9 @@ public class Measure implements Comparable<Measure> {
 			double latest = 0;
 			for (Double dub : notes.keySet()) {
 				for (MidiAction note : notes.get(dub)) {
-					latest = Math.max(latest, dub + note.getDuration());
+					latest = Math.max(latest, dub + note.duration()); // FIXME likely still prone to errors
+//					if (latest >= .25 && latest <= .75)
+//						System.out.println("math: " + dub + " + " + note.duration() + " = " + latest);
 				}
 			}
 			return latest;

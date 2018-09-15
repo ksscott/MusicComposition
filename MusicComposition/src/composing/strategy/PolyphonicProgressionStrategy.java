@@ -15,6 +15,7 @@ import theory.ChordSpec;
 import theory.Key;
 import theory.Measure;
 import theory.MidiPitch;
+import theory.NoteDuration;
 import theory.analysis.Analysis;
 import theory.progression.ChordProgressions;
 import theory.progression.ChordProgressions.ChordProgression;
@@ -57,7 +58,7 @@ public class PolyphonicProgressionStrategy extends ChordsSectionWriter {
 	protected Measure composeBar(Measure lastMeasure, ChordSpec nextChordSpec) {
 		// TODO significant work is required to do anything other than play one chord per bar
 		// first off, the analysis has assigned exactly one chordspec to each bar
-		Measure measure = new Measure(4, 1/4.0);
+		Measure measure = Measure.commonTime();
 		
 		List<MidiNote> lastNotes = new ArrayList<>();
 		
@@ -74,7 +75,7 @@ public class PolyphonicProgressionStrategy extends ChordsSectionWriter {
 				ChordSpec chordSpec = key.chordSpec(1);
 				Chord chord = chordSpec.builder().addPitch(8).setOctave(3).build();
 				MidiPitch pitch = chord.get().get(voices.indexOf(voice));
-				lastNotes.add(new MidiNote(pitch, 1));
+				lastNotes.add(new MidiNote(pitch, NoteDuration.whole()));
 			}
 		}
 		
@@ -89,7 +90,7 @@ public class PolyphonicProgressionStrategy extends ChordsSectionWriter {
 		
 		int index = 0;
 		for (MidiPitch pitch : nextChord) { // assume sorted
-			MidiNote nextNote = new MidiNote(pitch, measure.length());
+			MidiNote nextNote = new MidiNote(pitch, NoteDuration.whole());
 			if (lastMeasure != null) {
 				MidiNote.tieOver(lastNotes.get(3 - index), nextNote); // assume sorted
 				heldNotes.put(voices.get(3 - index), lastNotes.get(3 - index));

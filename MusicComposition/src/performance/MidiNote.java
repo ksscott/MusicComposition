@@ -1,6 +1,7 @@
 package performance;
 
 import theory.MidiPitch;
+import theory.NoteDuration;
 
 public class MidiNote extends MidiAction {
 	
@@ -12,14 +13,14 @@ public class MidiNote extends MidiAction {
 	private int tiedFromPitch;
 	private boolean tiesOver;
 	
-	public MidiNote(int midiPitch, double duration) {
+	public MidiNote(int midiPitch, NoteDuration duration) {
 		super(duration);
 		this.pitch = midiPitch;
 		this.peakMillis = 150;
 		this.dynamic = Dynamic.MEZZO_FORTE;
 	}
 	
-	public MidiNote(MidiPitch pitch, double duration) {
+	public MidiNote(MidiPitch pitch, NoteDuration duration) {
 		this(pitch.get(), duration);
 	}
 	
@@ -53,15 +54,25 @@ public class MidiNote extends MidiAction {
 		return tiesOver;
 	}
 	
-	/**
-	 * Note: does not preserve note ties 
-	 * @see {@link MidiAction#expand(double)}
-	 */
+//	/**
+//	 * Note: does not preserve note ties 
+//	 * @see {@link MidiAction#expand(double)}
+//	 */
+//	@Override
+//	public MidiNote expand(double timeRatio) {
+//		// FIXME remove this method?
+//		if (timeRatio <= 0)
+//			throw new IllegalArgumentException("Only positive ratios accepted for expansions.");
+//		MidiNote note = new MidiNote(pitch, duration*timeRatio);
+//		note.peakMillis = this.peakMillis;
+//		note.dynamic = this.dynamic;
+//		// choosing not to preserve any ties
+//		return note;
+//	}
+	
 	@Override
-	public MidiNote expand(double timeRatio) {
-		if (timeRatio <= 0)
-			throw new IllegalArgumentException("Only positive ratios accepted for expansions.");
-		MidiNote note = new MidiNote(pitch, duration*timeRatio);
+	public MidiNote expand(int power) {
+		MidiNote note = new MidiNote(pitch, duration.expand(power));
 		note.peakMillis = this.peakMillis;
 		note.dynamic = this.dynamic;
 		// choosing not to preserve any ties

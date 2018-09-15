@@ -15,7 +15,6 @@ import composing.RandomUtil;
 import composing.writer.ChordPlayingUtil;
 import composing.writer.PrettyMelodyWriter;
 import performance.Dynamic;
-import performance.MidiAction;
 import performance.MidiNote;
 import performance.Tempo;
 import performance.instrument.Instrument;
@@ -24,6 +23,7 @@ import theory.ChordSpec;
 import theory.Key;
 import theory.Measure;
 import theory.MidiPitch;
+import theory.NoteDuration;
 import theory.analysis.Analysis;
 import theory.analysis.Phrase;
 import theory.analysis.Section;
@@ -38,11 +38,13 @@ import theory.progression.VoiceLeading;
  */
 public class PrettyProgressionStrategy extends ChordsSectionWriter {
 	
-	PrettyMelodyWriter melodyWriter;
+	protected PrettyMelodyWriter melodyWriter;
 	
 	protected int octave = 3;
+	
+	// TODO remove state from this strategy object
 	protected Tempo currentTempo;
-	private Function<Chord,Phrase> chordPlayer; // hackish
+	protected Function<Chord,Phrase> chordPlayer; // hackish
 	
 	protected Instrument piano;
 	protected Instrument solo;
@@ -51,7 +53,7 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		super(key);
 		this.melodyWriter = new PrettyMelodyWriter();
 		this.currentTempo = Tempo.ADAGIETTO;
-		this.chordPlayer = chord -> ChordPlayingUtil.playChordOnBeats(chord);
+		this.chordPlayer = chord -> ChordPlayingUtil.triplets(chord);
 		this.piano = Instrument.PIANO;
 		this.solo = Instrument.SOLO;
 	}
@@ -187,7 +189,7 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 	}
 
 	private Measure backgroundChord(Chord previousChord, ChordSpec nextChordSpec, Instrument instrument) {
-		Measure measure = new Measure(4, 1/4.0);
+		Measure measure = Measure.commonTime();
 		
 		int bassMin = MidiPitch.inOctave(key.getTonic(), octave);
 		int bassMax = bassMin + 19;
@@ -218,9 +220,10 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		
 		// dynamics adjusting
 		// stress beats
-		double beatValue = measure.beatValue();
+		NoteDuration beatValue = measure.beatValue();
 		for (int beat=0; beat<measure.beats(); beat++) {
-			List<MidiNote> downbeatNotes = measure.getNotes(instrument, beat*beatValue);
+			List<MidiNote> downbeatNotes = measure.getNotes(instrument, beat*beatValue.duration());
+//			System.out.println("Notes on beat " + (beat+1) + ": " + downbeatNotes.size());
 			for (MidiNote note : downbeatNotes) {
 //				System.out.println("original dynamic: " + note.getDynamic());
 				note.setDynamic(Dynamic.above(note.getDynamic()));
@@ -230,7 +233,7 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		// ease off all notes after first whole beat:
 //		System.out.println("Measure length: " + measure.length());
 //		System.out.println("Getting notes from " + beatValue + " to " + measure.length());
-		List<MidiNote> remainingNotes = measure.getNotes(instrument, beatValue, measure.length());
+		List<MidiNote> remainingNotes = measure.getNotes(instrument, beatValue.duration(), measure.length());
 //		System.out.println("Remaining notes: " + remainingNotes.size());
 		for (MidiNote note : remainingNotes)
 			note.setDynamic(Dynamic.below(note.getDynamic()));
@@ -267,7 +270,7 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 	@SuppressWarnings("unused")
 	private static void tieMeasures(Measure lastMeasure, Measure nextMeasure) {
 		for (Instrument instrument : lastMeasure.getInstruments()) {
-			List<MidiNote> lastNotes = lastMeasure.getNotes(instrument, lastMeasure.beatValue()*(lastMeasure.beats()-1));
+			List<MidiNote> lastNotes = lastMeasure.getNotes(instrument, lastMeasure.beatValue().duration()*(lastMeasure.beats()-1));
 			List<MidiNote> firstNotes = nextMeasure.getNotes(instrument, 0.0); // hard coded :(
 			if (lastNotes.size() != firstNotes.size())
 				System.out.println("Warning! Tied measure has unequal numbers of notes for instrument "

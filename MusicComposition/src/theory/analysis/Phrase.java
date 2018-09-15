@@ -35,7 +35,7 @@ public class Phrase implements Cloneable {
 		double latest = Integer.MIN_VALUE;
 		for (Double dub : notes.keySet()) {
 			for (MidiAction note : notes.get(dub)) {
-				latest = Math.max(latest, dub + note.getDuration());
+				latest = Math.max(latest, dub + note.duration());
 			}
 		}
 		return latest;
@@ -108,33 +108,60 @@ public class Phrase implements Cloneable {
 				add(note, time + offset);
 	}
 
+//	/**
+//	 * Stretches or compresses this phrase about the center: time = 0
+//	 * <p>
+//	 * All notes will be lengthened by a factor of timeRatio. 
+//	 * All note offsets will be shifted away from 0 by a factor of timeRatio.
+//	 * <p>
+//	 * Example: expand(2.0)
+//	 * <p>
+//	 * | q q q q |  -->  | h h | h h |
+//	 * 
+//	 * <p>
+//	 * WARNING: Note ties will not be preserved
+//	 * 
+//	 * @param timeRatio ratio of expansion, ratios less than 1 will compress the phrase, 
+//	 * non-positive ratios not supported
+//	 * @return the expanded phrase
+//	 */
+//	public Phrase expand(double timeRatio) {
+//		// FIXME remove this method?
+//		if (timeRatio <= 0)
+//			throw new IllegalArgumentException("Only positive ratios accepted for expansions.");
+//		Phrase phrase = new Phrase();
+//		for (Double time : notes.keySet()) {
+//			List<MidiAction> newList = new ArrayList<>();
+//			for (MidiAction note : notes.get(time))
+//				newList.add(note.expand(timeRatio));
+//			phrase.notes.put(time*timeRatio, newList);
+//		}
+//		return phrase;
+//	}
+	
 	/**
 	 * Stretches or compresses this phrase about the center: time = 0
 	 * <p>
-	 * All notes will be lengthened by a factor of timeRatio. 
-	 * All note offsets will be shifted away from 0 by a factor of timeRatio.
+	 * All notes will be expanded/compressed by a factor of 2^power. 
+	 * All note offsets from 0 will be expanded/compressed by a factor of 2^power.
 	 * <p>
-	 * Example: expand(2.0)
+	 * Example: expand(1)
 	 * <p>
 	 * | q q q q |  -->  | h h | h h |
 	 * 
 	 * <p>
 	 * WARNING: Note ties will not be preserved
 	 * 
-	 * @param timeRatio ratio of expansion, ratios less than 1 will compress the phrase, 
-	 * non-positive ratios not supported
+	 * @param power power of 2, powers less than 0 will compress the phrase 
 	 * @return the expanded phrase
 	 */
-	public Phrase expand(double timeRatio) {
-		if (timeRatio <= 0)
-			throw new IllegalArgumentException("Only positive ratios accepted for expansions.");
+	public Phrase expand(int power) {
 		Phrase phrase = new Phrase();
 		for (Double time : notes.keySet()) {
-			List<MidiAction> list = notes.get(time);
 			List<MidiAction> newList = new ArrayList<>();
-			for (MidiAction note : list)
-				newList.add(note.expand(timeRatio));
-			phrase.notes.put(time*timeRatio, newList);
+			for (MidiAction note : notes.get(time))
+				newList.add(note.expand(power));
+			phrase.notes.put(time*Math.pow(2, power), newList);
 		}
 		return phrase;
 	}
@@ -158,7 +185,17 @@ public class Phrase implements Cloneable {
 	
 	@Override
 	public Phrase clone() {
-		return expand(1);
+//		return expand(1);
+		
+		// moving here for now
+		Phrase phrase = new Phrase();
+		for (Double time : notes.keySet()) {
+			List<MidiAction> newList = new ArrayList<>();
+			for (MidiAction note : notes.get(time))
+				newList.add(note.clone());
+			phrase.notes.put(time, newList);
+		}
+		return phrase;
 	}
 	
 }
