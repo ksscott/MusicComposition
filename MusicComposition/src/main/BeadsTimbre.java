@@ -2,6 +2,7 @@ package main;
 
 import net.beadsproject.beads.data.Buffer;
 import performance.Timbre;
+import performance.instrument.Instrument;
 
 public class BeadsTimbre implements Timbre {
 	
@@ -18,6 +19,27 @@ public class BeadsTimbre implements Timbre {
 	}
 	public int getPeakMillis() { return peakMillis; }
 	public Buffer getWaveform() { return waveform; }
+	
+	public static BeadsTimbre getTimbre(Instrument instrument) {
+		if (instrument == Instrument.SOPRANO_VOICE
+				|| instrument == Instrument.ALTO_VOICE
+				|| instrument == Instrument.TENOR_VOICE
+				|| instrument == Instrument.BASS_VOICE
+				)
+			return getSineTimbre();
+		
+		if (instrument == Instrument.SOLO) 
+			return getInstrumentTimbre();
+		if (instrument == Instrument.PIANO) 
+			return getInstrumentTimbre();
+		
+		if (instrument == Instrument.TRUMPET) 
+			return getSineTimbre();
+		if (instrument == Instrument.BASS) 
+			return getInstrumentTimbre();
+		
+		return getSineTimbre();
+	}
 	
 	public static BeadsTimbre getSineTimbre() {
 		if (sineTimbre == null)

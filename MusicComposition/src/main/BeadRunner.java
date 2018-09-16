@@ -153,7 +153,7 @@ public class BeadRunner {
 							
 							
 					private void playNotes(Instrument instrument, List<MidiNote> notes, double millisPerWholeNote) {
-						BeadsTimbre timbre = (BeadsTimbre) instrument.getTimbre(); // FIXME true for now
+						BeadsTimbre timbre = BeadsTimbre.getTimbre(instrument); // FIXME true for now
 						int attackTime = timbre.getPeakMillis();
 						Buffer buffer = timbre.getWaveform();
 						

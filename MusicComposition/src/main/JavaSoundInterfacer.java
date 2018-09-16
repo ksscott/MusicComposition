@@ -3,7 +3,10 @@ package main;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Scanner;
@@ -34,7 +37,7 @@ public class JavaSoundInterfacer {
 											  + "quit\n";
 	private static final String closingString = "\uD834\uDD1E Terminating Live Music Composition \uD834\uDD1E";
 	
-	private static Queue<String> userInputs = new PriorityQueue<>();
+	private static Queue<String> userInputs = new LinkedList<>();
 	/** whether user input queue is empty */
 	private static boolean empty = true;
 	private static final List<String> STOP_COMMANDS = Arrays.asList(new String[] { "stop", "end", "quit", "kill" });
@@ -48,6 +51,7 @@ public class JavaSoundInterfacer {
 		synthesizer.open();
 	    synthRcvr = synthesizer.getReceiver();
 	    
+//	    javaSoundPractice();
 	    composeMusic();
 	}
 	
@@ -58,6 +62,7 @@ public class JavaSoundInterfacer {
 		Composer composer = new Composer();
 		InputThread inputThread = new InputThread();
 		inputThread.start();
+		InstrumentBank instrumentBank = new InstrumentBank();
 		
 		System.out.println(openingString);
 		
@@ -79,7 +84,7 @@ public class JavaSoundInterfacer {
 
 			for (Double time : times) {
 				if (!empty) {
-					final String input = receiveUserInput();
+					final String input = receiveUserInput(); // TODO move this
 					if (STOP_COMMANDS.contains(input)) {
 						// TODO figure out best stopping procedure
 						inputThread.end();
@@ -99,17 +104,22 @@ public class JavaSoundInterfacer {
 				ticker = time;
 				
 				for (performance.instrument.Instrument instrument : measure.getInstruments()) {
+					Instrument midiInstrument = instrumentBank.translate(instrument);
 					List<MidiNote> notes = measure.getNotes(instrument, time);
+					if (!notes.isEmpty() &&!instrument.equals(performance.instrument.Instrument.PIANO))
+						allNotesOff(midiInstrument);
 					for (MidiNote note : notes) {
-						noteOn(0, note.getPitch(), (int) (maxVolume * note.getDynamic().volume())); // TODO
+						noteOn(midiInstrument, note.getPitch(), (int) (maxVolume * note.getDynamic().volume())); // TODO
 					}
 				}
 				
 			}
 			if (ticker < measure.length())
 				waitWholeNotes(measure.length() - ticker, beatValue, bpm);
-			for (int i=1; i<120; i++) // TODO adjust midipitch range
-				noteOff(0, i); // FIXME not working for some unknown reason
+			
+			// attempt to turn off all notes at measure end:
+			for (performance.instrument.Instrument instrument : measure.getInstruments())
+				allNotesOff(instrumentBank.translate(instrument)); // FIXME not working for some unknown reason
 		}
 	}
 	
@@ -119,11 +129,13 @@ public class JavaSoundInterfacer {
 		Soundbank defaultSoundbank = synthesizer.getDefaultSoundbank();
 		System.out.println("soundbank instruments: " + defaultSoundbank.getInstruments().length);
 		Instrument[] availableInstruments = synthesizer.getAvailableInstruments(); // size 129
-		Instrument instrument = availableInstruments[10];
+		Instrument instrument = availableInstruments[73];
 		System.out.print("Instrument: " + instrument.getName());
 		System.out.println(" - instrument supported? " + synthesizer.isSoundbankSupported(instrument.getSoundbank()));
 		
-		synthesizer.remapInstrument(availableInstruments[0], instrument);
+//		System.out.println("Instrument 0: " + availableInstruments[0].getName());
+		System.out.println("Remapping instrument, success? "+ synthesizer.remapInstrument(availableInstruments[0], instrument));
+		System.out.println("Instrument 0: " + availableInstruments[0].getName());
 		
 		System.out.println("Loading instrument, success? " + synthesizer.loadInstrument(instrument));
 		System.out.println("Loading all instruments, success? " + synthesizer.loadAllInstruments(instrument.getSoundbank()));
@@ -133,6 +145,10 @@ public class JavaSoundInterfacer {
 		channel1.programChange(instrument.getPatch().getBank(), instrument.getPatch().getProgram());
 		channel1.setChannelPressure(50);
 		channel1.programChange(instrument.getPatch().getProgram());
+		for (MidiChannel channel : synthesizer.getChannels())
+			channel.programChange(instrument.getPatch().getProgram());
+		System.out.println("Instrument 0: " + availableInstruments[0].getName());
+		System.out.println("Instrument: " + instrument.getName());
 		
 	    System.out.println("Pressure: " + channel1.getChannelPressure());
 	    System.out.println("Mono: " + channel1.getMono());
@@ -153,7 +169,7 @@ public class JavaSoundInterfacer {
 	    programChangeMsg.setMessage(ShortMessage.PROGRAM_CHANGE, instrument.getPatch().getBank(), instrument.getPatch().getProgram());
 	    synthRcvr.send(programChangeMsg, -1);
 //	    synthRcvr.send(myMsg, -1); // -1 means no time stamp
-	    noteOn(4, 60, 93);
+	    noteOn(instrument, 60, 93);
 	    try { Thread.sleep(1000); } catch (Exception e) { }
 	    ShortMessage decayMsg = new ShortMessage();
 	    decayMsg.setMessage(ShortMessage.CHANNEL_PRESSURE, 0, 0);
@@ -161,16 +177,18 @@ public class JavaSoundInterfacer {
 	    ShortMessage offMsg = new ShortMessage();
 	    offMsg.setMessage(ShortMessage.NOTE_OFF, 4, 60);
 	    synthRcvr.send(offMsg, -1);
+//	    noteOff(4, 60);
 //	    synthRcvr.send(myMsg, -1); // -1 means no time stamp
-	    noteOn(4, 60, 93);
+	    noteOn(instrument, 60, 93);
 	    System.out.println("off requested");
 	    try { Thread.sleep(1000); } catch (Exception e) { }
 	    try { Thread.sleep(1000); } catch (Exception e) { }
 	    try { Thread.sleep(1000); } catch (Exception e) { }
 	}
 	
-	private static void noteOn(int channel, int midiPitch, int velocity) {
+	private static void noteOn(Instrument instrument, int midiPitch, int velocity) {
 		ShortMessage noteOnMsg = new ShortMessage();
+		int channel = MidiChannelRegistrar.getInstance().getForInstrument(instrument);
 		try {
 			noteOnMsg.setMessage(ShortMessage.NOTE_ON, channel, midiPitch, velocity);
 		} catch (InvalidMidiDataException e) {
@@ -179,15 +197,22 @@ public class JavaSoundInterfacer {
 		synthRcvr.send(noteOnMsg, -1);
 	}
 	
-	private static void noteOff(int channel, int midiPitch) {
-		ShortMessage noteOffMsg = new ShortMessage();
-		try {
-			noteOffMsg.setMessage(ShortMessage.NOTE_OFF, channel, midiPitch);
-		} catch (InvalidMidiDataException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		synthRcvr.send(noteOffMsg,  -1);
+	private static void noteOff(Instrument instrument, int midiPitch) {
+//		ShortMessage noteOffMsg = new ShortMessage();
+		int channel = MidiChannelRegistrar.getInstance().getForInstrument(instrument);
+		synthesizer.getChannels()[channel].noteOff(midiPitch);
+//		try {
+//			noteOffMsg.setMessage(ShortMessage.NOTE_OFF, channel, midiPitch);
+//		} catch (InvalidMidiDataException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		synthRcvr.send(noteOffMsg,  -1);
+	}
+	
+	private static void allNotesOff(Instrument instrument) {
+		int channel = MidiChannelRegistrar.getInstance().getForInstrument(instrument);
+		synthesizer.getChannels()[channel].allNotesOff();;
 	}
 	
 	private static void waitWholeNotes(double wholeNotes, double beatValue, double bpm) {
@@ -218,7 +243,104 @@ public class JavaSoundInterfacer {
 		return inputs;
 	}
 	
-public static class InputThread extends Thread {
+	private static class InstrumentBank {
+		
+		private Map<performance.instrument.Instrument,Instrument> map;
+		
+		public InstrumentBank() {
+			this.map = new HashMap<>();
+		}
+		
+		public Instrument translate(performance.instrument.Instrument requested) {
+			if (map.containsKey(requested))
+				return map.get(requested);
+			int instrumentCode = JavaSoundTimbre.render(requested);
+			Instrument midiInstrument = synthesizer.getAvailableInstruments()[instrumentCode];
+			map.put(requested, midiInstrument);
+			return midiInstrument;
+		}
+		
+	}
+	
+	private static class MidiChannelRegistrar {
+		
+		private static MidiChannelRegistrar instance;
+		private static Queue<MidiChannel> unusedChannels;
+		private static Map<Instrument,MidiChannel> registered;
+		private static Map<MidiChannel,Integer> channelIDs;
+		
+		private MidiChannelRegistrar() {
+			unusedChannels = new LinkedList<>();
+			registered = new HashMap<>();
+			channelIDs = new HashMap<>();
+			
+			int i=0;
+		    for (MidiChannel channel : synthesizer.getChannels()) {
+		    	unusedChannels.add(channel);
+		    	channelIDs.put(channel, i++);
+		    }
+		}
+		
+		public static MidiChannelRegistrar getInstance() {
+			if (instance == null)
+				instance = new MidiChannelRegistrar();
+			return instance;
+		}
+		
+		/**
+		 * Locates and appropriate MidiChannel and loads the given instrument if necessary.
+		 * 
+		 * @param instrument to play on the returned channel
+		 * @return index of the MidiChannel with the given instrument loaded
+		 * @throws IllegalStateException if all channels are in use by other instruments
+		 */
+		public synchronized int getForInstrument(Instrument instrument) {
+			if (registered.containsKey(instrument))
+				return channelIDs.get(registered.get(instrument));
+			
+			if (unusedChannels.isEmpty())
+				throw new IllegalStateException("No more free channels!");
+			
+			int program = instrument.getPatch().getProgram();
+			MidiChannel channel = null;
+			
+			// check if an unused channel is already setup for the instrument
+			boolean found = false;
+			for (MidiChannel unused : unusedChannels) {
+				if (unused.getProgram() == program) {
+					channel = unused;
+					break;
+				}
+			}
+			if (channel != null) {
+				unusedChannels.remove(channel);
+			} else {
+				channel = unusedChannels.poll();
+				channel.programChange(instrument.getPatch().getProgram());
+			}
+			registered.put(instrument, channel);
+			Integer channelID = channelIDs.get(channel);
+			System.out.println("Returned channel " + channelID + " for " + instrument.getName());
+			return channelID;
+		}
+		
+		public synchronized void release(Instrument instrument) {
+			MidiChannel channel = registered.get(instrument);
+			if (channel != null) {
+				unusedChannels.add(channel);
+				registered.remove(instrument);
+			}
+		}
+		
+		public synchronized void releaseAll() {
+			unusedChannels = new LinkedList<>();
+			for (MidiChannel channel : synthesizer.getChannels())
+				unusedChannels.add(channel);
+			registered = new HashMap<>();
+		}
+	}
+	
+	public static class InputThread extends Thread {
 		
 		private boolean stopped;
 		
