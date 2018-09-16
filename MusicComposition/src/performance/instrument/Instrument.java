@@ -45,8 +45,20 @@ public class Instrument implements Comparable<Instrument> { // TODO decide on an
 
 	@Override
 	public int compareTo(Instrument o) {
-		if (knownInstruments.contains(this) && knownInstruments.contains(o))
+		boolean thisKnown = knownInstruments.contains(this);
+		boolean thatKnown = knownInstruments.contains(o);
+		
+		// default ordering of known instruments
+		if (thisKnown && thatKnown)
 			return knownInstruments.indexOf(this) - knownInstruments.indexOf(o);
+		
+		// all known instruments come first
+		else if (thisKnown)
+			return -1;
+		else if (thatKnown)
+			return 1;
+		
+		// sort the rest alphabetically
 		return this.name.compareTo(o.name);
 	}
 
