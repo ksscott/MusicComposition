@@ -245,6 +245,7 @@ public class JavaSoundInterfacer {
 	
 	private static class InstrumentBank {
 		
+		JavaSoundTimbre timbre = JavaSoundTimbre.getInstance();
 		private Map<performance.instrument.Instrument,Instrument> map;
 		
 		public InstrumentBank() {
@@ -254,7 +255,7 @@ public class JavaSoundInterfacer {
 		public Instrument translate(performance.instrument.Instrument requested) {
 			if (map.containsKey(requested))
 				return map.get(requested);
-			int instrumentCode = JavaSoundTimbre.render(requested);
+			int instrumentCode = timbre.render(requested);
 			Instrument midiInstrument = synthesizer.getAvailableInstruments()[instrumentCode];
 			map.put(requested, midiInstrument);
 			return midiInstrument;
@@ -262,7 +263,7 @@ public class JavaSoundInterfacer {
 		
 	}
 	
-	private static class MidiChannelRegistrar {
+	private static class MidiChannelRegistrar { // FIXME Apparently "Channel 10" is reserved for drum sounds
 		
 		private static MidiChannelRegistrar instance;
 		private static Queue<MidiChannel> unusedChannels;
@@ -320,7 +321,7 @@ public class JavaSoundInterfacer {
 			}
 			registered.put(instrument, channel);
 			Integer channelID = channelIDs.get(channel);
-			System.out.println("Returned channel " + channelID + " for " + instrument.getName());
+//			System.out.println("Returned channel " + channelID + " for " + instrument.getName());
 			return channelID;
 		}
 		

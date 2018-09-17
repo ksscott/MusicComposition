@@ -28,14 +28,14 @@ public class BeadsTimbre implements Timbre {
 				)
 			return getSineTimbre();
 		
-		if (instrument == Instrument.SOLO) 
+		if (instrument == Instrument.FLUTE) 
 			return getInstrumentTimbre();
 		if (instrument == Instrument.PIANO) 
 			return getInstrumentTimbre();
 		
 		if (instrument == Instrument.TRUMPET) 
 			return getSineTimbre();
-		if (instrument == Instrument.BASS) 
+		if (instrument == Instrument.ACOUSTIC_BASS) 
 			return getInstrumentTimbre();
 		
 		return getSineTimbre();

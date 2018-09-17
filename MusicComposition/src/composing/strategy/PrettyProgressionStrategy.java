@@ -15,7 +15,6 @@ import composing.RandomUtil;
 import composing.writer.ChordPlayingUtil;
 import composing.writer.PrettyMelodyWriter;
 import performance.Dynamic;
-import performance.MidiAction;
 import performance.MidiNote;
 import performance.Tempo;
 import performance.instrument.Instrument;
@@ -53,7 +52,7 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		this.currentTempo = Tempo.ADAGIETTO;
 		this.chordPlayer = chord -> ChordPlayingUtil.playChordOnBeats(chord);
 		this.piano = Instrument.PIANO;
-		this.solo = Instrument.SOLO;
+		this.solo = Instrument.FLUTE;
 	}
 	
 	@Override
@@ -157,6 +156,7 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 				// TODO Auto-generated method stub
 				// melody
 				try {
+					// WARNING: NPE was found originating in the lambda below: "measure -> ..."
 					List<Measure> measuresWithoutMelody = composition.getFuture().stream()
 							//					.filter(measure -> measure.getMeasureNumber() <= lastEndOfSection) // don't worry about measures outside a section (shouldn't happen)
 							.filter(measure -> !measure.getMetaInfo().contains("melody")) // FIXME got NPE here, believed null measure
