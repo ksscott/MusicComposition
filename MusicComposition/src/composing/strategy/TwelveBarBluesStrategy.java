@@ -22,7 +22,7 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 
 	public TwelveBarBluesStrategy(Note tonic) {
 		this.tonic = new MidiPitch(tonic, 3);
-		this.bass = Instrument.BASS;
+		this.bass = Instrument.ACOUSTIC_BASS;
 	}
 	
 	@Override

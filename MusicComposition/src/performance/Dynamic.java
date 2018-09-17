@@ -1,5 +1,8 @@
 package performance;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Dynamic {
 
 	public static final Dynamic PIANISSIMO = new Dynamic(-3);
@@ -9,6 +12,8 @@ public class Dynamic {
 	public static final Dynamic FORTE = new Dynamic(1);
 	public static final Dynamic FORTISSIMO = new Dynamic(2);
 	
+	public static final Map<Dynamic,Float> volumeCache = new HashMap<>();
+	
 	private final int value;
 	
 	private Dynamic(int value) {
@@ -17,7 +22,12 @@ public class Dynamic {
 	
 	/** @return value between 0 (silent) and 1 (maximum) */
 	public float volume() {
-		return (float) ((Math.atan(value*.7) / Math.PI) + 0.5);
+		if (volumeCache.containsKey(this))
+			return volumeCache.get(this);
+		double y = (Math.atan((value-1)*.5) / Math.PI) + 0.5;
+		float volume = (float) (1-Math.pow(1-y, 2));
+		volumeCache.put(this, volume);
+		return volume;
 	}
 	
 	public static Dynamic of(Dynamic other) {

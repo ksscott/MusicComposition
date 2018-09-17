@@ -27,6 +27,16 @@ import theory.Measure;
 
 public class BeadRunner {
 	
+	private static final String openingString = "\uD834\uDD1E Live Music Composition \uD834\uDD1E\n"
+			  + "Commands:\n"
+			  + "repertoire\n"
+			  + "restart\n"
+			  + "request [piece name]\n"
+			  + "switch\n"
+			  + "tempo [up or down]\n"
+			  + "quit\n";
+	private static final String closingString = "\uD834\uDD1E Terminating Live Music Composition \uD834\uDD1E";
+
 	private static Queue<String> userInputs = new PriorityQueue<>();
 	private static boolean empty = true;
 	private static final List<String> STOP_COMMANDS = Arrays.asList(new String[] { "stop", "end", "quit", "kill" });
@@ -36,6 +46,8 @@ public class BeadRunner {
 	public static void main(String[] args) {
 		InputThread inputThread = new InputThread();
 		inputThread.start();
+		
+		System.out.println(openingString);
 		
 		heldNotes = new HeldNotesManager();
 		final AudioContext ac;
@@ -74,8 +86,9 @@ public class BeadRunner {
 								composer.finishComposing();
 								clock.kill();
 								ac.out.kill();
-								System.exit(0); // best termination solution? Beads seems obstinate
-								return;
+								System.out.println(closingString);
+								System.exit(0); // best termination solution?
+								return; // dead code
 							}
 							Measure onTheFlyMeasure = composer.receiveInput(input);
 							if (onTheFlyMeasure != null)
@@ -140,7 +153,7 @@ public class BeadRunner {
 							
 							
 					private void playNotes(Instrument instrument, List<MidiNote> notes, double millisPerWholeNote) {
-						BeadsTimbre timbre = (BeadsTimbre) instrument.getTimbre(); // FIXME true for now
+						BeadsTimbre timbre = BeadsTimbre.getTimbre(instrument); // FIXME true for now
 						int attackTime = timbre.getPeakMillis();
 						Buffer buffer = timbre.getWaveform();
 						
