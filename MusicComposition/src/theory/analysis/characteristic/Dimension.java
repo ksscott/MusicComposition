@@ -9,6 +9,7 @@ package theory.analysis.characteristic;
  * Harmonic vocabulary <br>
  * Melodic style <br>
  * Rhythms <br>
+ * Texture <br>
  * <p>
  * and any other dimension of music 
  */
