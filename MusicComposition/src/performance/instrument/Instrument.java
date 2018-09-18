@@ -3,10 +3,7 @@ package performance.instrument;
 import java.util.ArrayList;
 import java.util.List;
 
-import main.BeadsTimbre;
-import performance.Timbre;
-
-public class Instrument implements Comparable<Instrument> { // TODO decide on an architecture surrounding instruments
+public class Instrument implements Comparable<Instrument> {
 	
 	public static final Instrument SOPRANO_VOICE = new Instrument ("Soprano");
 	public static final Instrument ALTO_VOICE = new Instrument ("Alto");
@@ -23,15 +20,24 @@ public class Instrument implements Comparable<Instrument> { // TODO decide on an
 	public static final Instrument FLUTE = new Instrument("Flute");
 	
 	public static final Instrument TRUMPET = new Instrument("Trumpet");
+	public static final Instrument TROMBONE = new Instrument("Trombone");
+	public static final Instrument TUBA = new Instrument("Tuba");
 	public static final Instrument MUTED_TRUMPET = new Instrument("Muted Trumpet");
 	public static final Instrument FRENCH_HORN = new Instrument("French Horn");
 	
 	public static final Instrument BARITONE_SAXOPHONE = new Instrument("Baritone Saxophone");
+	public static final Instrument OBOE = new Instrument("Oboe");
+	public static final Instrument BASSOON = new Instrument("Bassoon");
+	public static final Instrument CLARINET = new Instrument("Clarinet");
+	
+	public static final Instrument CHURCH_ORGAN = new Instrument("Church Organ");
 	
 	public static final Instrument NYLON_GUITAR = new Instrument("Nylon Guitar");
 	public static final Instrument ACOUSTIC_BASS = new Instrument("Bass");
 	
+	public static final Instrument CELESTA = new Instrument("Celesta");
 	public static final Instrument XYLOPHONE = new Instrument("Xylophone");
+	public static final Instrument TIMPANI = new Instrument("Timpani");
 	
 	public static final Instrument SITAR = new Instrument("Sitar");
 	public static final Instrument BAGPIPE = new Instrument("Bagpipe");
@@ -39,6 +45,7 @@ public class Instrument implements Comparable<Instrument> { // TODO decide on an
 	public static final Instrument STEEL_DRUMS = new Instrument("Steel Drums");
 	
 	public static final Instrument PIANO = new Instrument("Piano");
+	public static final Instrument HARPSICHORD = new Instrument("Harpsichord");
 	
 	private static List<Instrument> knownInstruments;
 	

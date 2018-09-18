@@ -22,7 +22,10 @@ public class JavaSoundTimbre implements Timbre {
 		map.put(Instrument.TENOR_VOICE, 54);
 		map.put(Instrument.BASS_VOICE, 54);
 		
+		// KEYBOARD
 		map.put(Instrument.PIANO, 0);
+		map.put(Instrument.HARPSICHORD, 6);
+		map.put(Instrument.CHURCH_ORGAN, 20);
 		
 		// STRINGS
 		map.put(Instrument.VIOLIN, 40);
@@ -37,18 +40,25 @@ public class JavaSoundTimbre implements Timbre {
 		
 		// BRASS
 		map.put(Instrument.TRUMPET, 56);
+		map.put(Instrument.TROMBONE, 57);
+		map.put(Instrument.TUBA, 558);
 		map.put(Instrument.MUTED_TRUMPET, 59);
 		map.put(Instrument.FRENCH_HORN, 60);
 		
 		// REEDS
 		map.put(Instrument.BARITONE_SAXOPHONE, 67);
+		map.put(Instrument.OBOE, 68);
+		map.put(Instrument.BASSOON, 70);
+		map.put(Instrument.CLARINET, 71);
 		
 		// GUITAR
 		map.put(Instrument.NYLON_GUITAR, 24);
 		map.put(Instrument.ACOUSTIC_BASS, 32);
 		
 		// CHROMATIC PERCUSSION
+		map.put(Instrument.CELESTA, 8);
 		map.put(Instrument.XYLOPHONE, 13);
+		map.put(Instrument.TIMPANI, 47);
 		
 		// "ETHNIC"
 		map.put(Instrument.SITAR, 104);
