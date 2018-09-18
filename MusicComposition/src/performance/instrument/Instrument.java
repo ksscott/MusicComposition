@@ -3,7 +3,7 @@ package performance.instrument;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Instrument implements Comparable<Instrument> { // TODO decide on an architecture surrounding instruments
+public class Instrument implements Comparable<Instrument> {
 	
 	public static final Instrument SOPRANO_VOICE = new Instrument ("Soprano");
 	public static final Instrument ALTO_VOICE = new Instrument ("Alto");
