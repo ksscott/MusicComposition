@@ -22,8 +22,10 @@ public class JavaSoundTimbre implements Timbre {
 		map.put(Instrument.TENOR_VOICE, 54);
 		map.put(Instrument.BASS_VOICE, 54);
 		
+		// KEYBOARD
 		map.put(Instrument.PIANO, 0);
 		map.put(Instrument.HARPSICHORD, 6);
+		map.put(Instrument.CHURCH_ORGAN, 20);
 		
 		// STRINGS
 		map.put(Instrument.VIOLIN, 40);

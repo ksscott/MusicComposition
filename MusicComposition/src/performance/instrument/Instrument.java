@@ -30,6 +30,8 @@ public class Instrument implements Comparable<Instrument> {
 	public static final Instrument BASSOON = new Instrument("Bassoon");
 	public static final Instrument CLARINET = new Instrument("Clarinet");
 	
+	public static final Instrument CHURCH_ORGAN = new Instrument("Church Organ");
+	
 	public static final Instrument NYLON_GUITAR = new Instrument("Nylon Guitar");
 	public static final Instrument ACOUSTIC_BASS = new Instrument("Bass");
 	
