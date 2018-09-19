@@ -388,18 +388,38 @@ public class ChordProgressions {
 						return (int) (path1Duplicates - path2Duplicates); // puts path with fewer duplicates first
 					
 					// prefer ambiguous progressions (in both keys for longer)
-					long path1CommonChords = path1.stream()
-							.map(node -> (KeyChangeProgressionNode) node) // softly enforced in KeyChange
-							.filter(KeyChangeProgressionNode::isInFromKey)
-							.filter(KeyChangeProgressionNode::isInToKey)
-							.count();
-					long path2CommonChords = path2.stream()
-							.map(node -> (KeyChangeProgressionNode) node) // softly enforced in KeyChange
-							.filter(KeyChangeProgressionNode::isInFromKey)
-							.filter(KeyChangeProgressionNode::isInToKey)
-							.count();
-					if (path1CommonChords != path2CommonChords)
-						return (int) (path2CommonChords - path1CommonChords); // flipped to put greater one first
+					int streak = 0;
+					int path1Max = 0;
+					int path2Max = 0;
+					for (ProgressionNode node : path1) {
+						if (((KeyChangeProgressionNode) node).isInFromKey()
+								&& ((KeyChangeProgressionNode) node).isInToKey())
+							path1Max = Math.max(++streak, path1Max);
+						else
+							streak = 0;
+					}
+					for (ProgressionNode node : path2) {
+						if (((KeyChangeProgressionNode) node).isInFromKey()
+								&& ((KeyChangeProgressionNode) node).isInToKey())
+							path2Max = Math.max(++streak, path2Max);
+						else
+							streak = 0;
+					}
+					if (path1Max != path2Max)
+						return path2Max - path1Max; // flipped to put greater one first
+					
+//					long path1CommonChords = path1.stream()
+//							.map(node -> (KeyChangeProgressionNode) node) // softly enforced in KeyChange
+//							.filter(KeyChangeProgressionNode::isInFromKey)
+//							.filter(KeyChangeProgressionNode::isInToKey)
+//							.count();
+//					long path2CommonChords = path2.stream()
+//							.map(node -> (KeyChangeProgressionNode) node) // softly enforced in KeyChange
+//							.filter(KeyChangeProgressionNode::isInFromKey)
+//							.filter(KeyChangeProgressionNode::isInToKey)
+//							.count();
+//					if (path1CommonChords != path2CommonChords)
+//						return (int) (path2CommonChords - path1CommonChords); // flipped to put greater one first
 					
 					// favor the path with a full cadence
 					Note path1PenultimateChordTonic = path1.get(path1.size()-2).getChord().getTonic();
