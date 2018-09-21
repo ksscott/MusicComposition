@@ -14,7 +14,6 @@ import composing.IncompleteComposition;
 import composing.RandomUtil;
 import composing.writer.ChordPlayingUtil;
 import composing.writer.PrettyMelodyWriter;
-import performance.Dynamic;
 import performance.MidiNote;
 import performance.Tempo;
 import performance.instrument.Instrument;
@@ -223,7 +222,7 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 			List<MidiNote> downbeatNotes = measure.getNotes(instrument, beat*beatValue);
 			for (MidiNote note : downbeatNotes) {
 //				System.out.println("original dynamic: " + note.getDynamic());
-				note.setDynamic(Dynamic.above(note.getDynamic()));
+				note.setDynamic(note.getDynamic().up());
 //				System.out.println("adjusted dynamic: " + note.getDynamic());
 			}
 		}
@@ -233,7 +232,7 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		List<MidiNote> remainingNotes = measure.getNotes(instrument, beatValue, measure.length());
 //		System.out.println("Remaining notes: " + remainingNotes.size());
 		for (MidiNote note : remainingNotes)
-			note.setDynamic(Dynamic.below(note.getDynamic()));
+			note.setDynamic(note.getDynamic().down());
 		
 		return measure;
 	}

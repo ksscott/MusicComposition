@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import performance.Dynamic;
 import performance.MidiAction.MidiRest;
 import performance.MidiNote;
 import theory.Key;

@@ -36,7 +36,7 @@ public class MidiNote extends MidiAction {
 	}
 	
 	public Dynamic getDynamic() {
-		return Dynamic.of(dynamic);
+		return dynamic.clone();
 	}
 	
 	public void setDynamic(Dynamic dynamic) {

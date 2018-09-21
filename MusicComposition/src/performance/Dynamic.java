@@ -3,7 +3,7 @@ package performance;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Dynamic {
+public class Dynamic implements Cloneable {
 
 	public static final Dynamic PIANISSIMO = new Dynamic(-3);
 	public static final Dynamic PIANO = new Dynamic(-2);
@@ -30,18 +30,31 @@ public class Dynamic {
 		return volume;
 	}
 	
-	public static Dynamic of(Dynamic other) {
-		return new Dynamic(other.value);
+	/**
+	 * @param other dynamic to compare to this one
+	 * @return number of dynamic levels above this dynamic the given dynamic is 
+	 * e.g. MEZZO_FORTE.levelsTo(MEZZO_PIANO) = -1
+	 */
+	public int levelsTo(Dynamic other) {
+		return other.value - this.value;
 	}
 	
 	/** @return the dynamic immediately louder than this one */
-	public static Dynamic above(Dynamic other) {
-		return new Dynamic(other.value + 1);
+	public Dynamic up() {
+		return up(1);
+	}
+	
+	public Dynamic up(int levels) {
+		return new Dynamic(value + levels);
 	}
 	
 	/** @return the dynamic immediately quieter than this one */
-	public static Dynamic below(Dynamic other) {
-		return new Dynamic(other.value - 1);
+	public Dynamic down() {
+		return down(1);
+	}
+	
+	public Dynamic down(int levels) {
+		return new Dynamic(value - levels);
 	}
 	
 	/** e.g. "mf" or "pp" */
@@ -106,6 +119,11 @@ public class Dynamic {
 		}
 		
 		return retval;
+	}
+	
+	@Override
+	public Dynamic clone() {
+		return new Dynamic(value);
 	}
 
 	@Override

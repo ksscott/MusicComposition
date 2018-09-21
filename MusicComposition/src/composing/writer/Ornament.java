@@ -46,7 +46,7 @@ public class Ornament {
 			MidiNote upperNote = new MidiNote(pitch, durationOfTwoNotes / 2.0);
 			MidiNote lowerNote = new MidiNote(upperPitch, durationOfTwoNotes / 2.0);
 			upperNote.setDynamic(dynamic);
-			lowerNote.setDynamic(Dynamic.below(dynamic));
+			lowerNote.setDynamic(dynamic.down());
 			phrase.add(upperNote);
 			phrase.add(lowerNote);
 			d -= durationOfTwoNotes;
@@ -81,8 +81,8 @@ public class Ornament {
 		MidiNote secondNote = new MidiNote(upperPitch, mordentDuration/2.0);
 		MidiNote lastNote = new MidiNote(note.getPitch(), note.getDuration() - mordentDuration);
 		firstNote.setDynamic(dynamic);
-		secondNote.setDynamic(Dynamic.below(dynamic));
-		lastNote.setDynamic(Dynamic.below(dynamic));
+		secondNote.setDynamic(dynamic.down());
+		lastNote.setDynamic(dynamic.down());
 		phrase.add(firstNote);
 		phrase.add(secondNote);
 		phrase.add(lastNote);
@@ -115,8 +115,8 @@ public class Ornament {
 		MidiNote secondNote = new MidiNote(lowerPitch, mordentDuration/2.0);
 		MidiNote lastNote = new MidiNote(note.getPitch(), note.getDuration() - mordentDuration);
 		firstNote.setDynamic(dynamic);
-		secondNote.setDynamic(Dynamic.below(dynamic));
-		lastNote.setDynamic(Dynamic.below(dynamic));
+		secondNote.setDynamic(dynamic.down());
+		lastNote.setDynamic(dynamic.down());
 		phrase.add(firstNote);
 		phrase.add(secondNote);
 		phrase.add(lastNote);
@@ -153,10 +153,10 @@ public class Ornament {
 		MidiNote fourthNote = new MidiNote(lowerPitch, turnDuration/6.0);
 		MidiNote lastNote = new MidiNote(notePitch, note.getDuration() - turnDuration);
 		firstNote.setDynamic(dynamic);
-		secondNote.setDynamic(Dynamic.below(dynamic));
-		thirdNote.setDynamic(Dynamic.below(dynamic));
-		fourthNote.setDynamic(Dynamic.below(dynamic));
-		lastNote.setDynamic(Dynamic.below(dynamic));
+		secondNote.setDynamic(dynamic.down());
+		thirdNote.setDynamic(dynamic.down());
+		fourthNote.setDynamic(dynamic.down());
+		lastNote.setDynamic(dynamic.down());
 		phrase.add(firstNote);
 		phrase.add(secondNote);
 		phrase.add(thirdNote);
@@ -196,7 +196,7 @@ public class Ornament {
 		MidiNote upperNote = new MidiNote(appoPitch, appoDuration);
 		MidiNote lowerNote = new MidiNote(note.getPitch(), note.getDuration() - appoDuration);
 		upperNote.setDynamic(dynamic);
-		lowerNote.setDynamic(Dynamic.below(dynamic));
+		lowerNote.setDynamic(dynamic.down());
 		phrase.add(upperNote);
 		phrase.add(lowerNote);
 		

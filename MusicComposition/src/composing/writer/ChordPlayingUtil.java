@@ -23,7 +23,7 @@ public class ChordPlayingUtil {
 			for (MidiPitch pitch : chord) {
 				MidiNote note = new MidiNote(pitch, beatValue);
 				if (beat != 0)
-					note.setDynamic(Dynamic.below(note.getDynamic()));
+					note.setDynamic(note.getDynamic().down());
 				measure.add(instrument, note, beat*beatValue);
 			}
 		}
@@ -47,8 +47,8 @@ public class ChordPlayingUtil {
 			MidiNote note1 = new MidiNote(arpeggiator.next(), noteLength);
 			MidiNote note2 = new MidiNote(arpeggiator.next(), noteLength);
 			if (beat != 0)
-				note1.setDynamic(Dynamic.below(note1.getDynamic()));
-			note2.setDynamic(Dynamic.below(note1.getDynamic()));
+				note1.setDynamic(note1.getDynamic().down());
+			note2.setDynamic(note1.getDynamic().down());
 			measure.add(instrument,  note1, beat*beatValue);
 			measure.add(instrument,  note2, beat*beatValue + noteLength);
 		}
@@ -79,9 +79,9 @@ public class ChordPlayingUtil {
 			for (int i=0; i<pitches.size(); i++) {
 				MidiNote note = new MidiNote(pitches.get(i), noteLength);
 				if (i == 0)
-					note.setDynamic(Dynamic.above(note.getDynamic()));
+					note.setDynamic(note.getDynamic().up());
 				if (beat != 0)
-					note.setDynamic(Dynamic.below(note.getDynamic()));
+					note.setDynamic(note.getDynamic().down());
 				measure.add(instrument, note, beat*beatValue + i*noteLength);
 			}
 		}
@@ -111,9 +111,9 @@ public class ChordPlayingUtil {
 				Iterator<MidiPitch> albertiBass = chord.albertiBass();
 				MidiNote note = new MidiNote(albertiBass.next(), noteLength);
 				if (i == 0)
-					note.setDynamic(Dynamic.above(note.getDynamic()));
+					note.setDynamic(note.getDynamic().up());
 				if (beat != 0)
-					note.setDynamic(Dynamic.below(note.getDynamic()));
+					note.setDynamic(note.getDynamic().down());
 				measure.add(instrument, note, beat*beatValue + i*noteLength);
 			}
 		}
@@ -142,8 +142,8 @@ public class ChordPlayingUtil {
 			MidiNote note1 = new MidiNote(albertiBass.next(), noteLength);
 			MidiNote note2 = new MidiNote(albertiBass.next(), noteLength);
 			if (beat != 0)
-				note1.setDynamic(Dynamic.below(note1.getDynamic()));
-			note2.setDynamic(Dynamic.below(note1.getDynamic()));
+				note1.setDynamic(note1.getDynamic().down());
+			note2.setDynamic(note1.getDynamic().down());
 			measure.add(instrument,  note1, beat*beatValue);
 			measure.add(instrument,  note2, beat*beatValue + noteLength);
 		}
@@ -179,12 +179,12 @@ public class ChordPlayingUtil {
 			for (MidiPitch pitch : rest) {
 				MidiNote chordNote = new MidiNote(pitch, noteLength);
 				if (beat != 0)
-					chordNote.setDynamic(Dynamic.below(chordNote.getDynamic()));
+					chordNote.setDynamic(chordNote.getDynamic().down());
 				measure.add(instrument, chordNote, beat*beatValue);
 				dynamic = chordNote.getDynamic();
 			}
 			MidiNote bassNote = new MidiNote(bass, noteLength);
-			bassNote.setDynamic(Dynamic.below(dynamic));
+			bassNote.setDynamic(dynamic.down());
 			measure.add(instrument, bassNote, beat*beatValue + noteLength);
 		}
 	}
