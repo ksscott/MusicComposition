@@ -123,6 +123,7 @@ public class JavaSoundInterfacer {
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	private static void javaSoundPractice() throws MidiUnavailableException, InvalidMidiDataException {
 		System.out.println("loaded instruments: " + synthesizer.getLoadedInstruments().length);
 		System.out.println("Synthesizer max polyphony: " + synthesizer.getMaxPolyphony());
@@ -306,7 +307,6 @@ public class JavaSoundInterfacer {
 			MidiChannel channel = null;
 			
 			// check if an unused channel is already setup for the instrument
-			boolean found = false;
 			for (MidiChannel unused : unusedChannels) {
 				if (unused.getProgram() == program) {
 					channel = unused;
