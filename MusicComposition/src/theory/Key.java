@@ -1,6 +1,6 @@
 package theory;
 
-import static composing.RandomUtil.modPos;
+import static theory.MathUtil.modPos;
 import static theory.Mode.AEOLIAN;
 import static theory.Mode.IONIAN;
 import static theory.Mode.LOCRIAN;

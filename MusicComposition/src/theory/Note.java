@@ -1,6 +1,6 @@
 package theory;
 
-import static composing.RandomUtil.modPos;
+import static theory.MathUtil.modPos;
 
 public class Note implements Cloneable, Comparable<Note> {
 	

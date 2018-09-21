@@ -2,7 +2,7 @@ package theory;
 
 import java.util.Arrays;
 
-import static composing.RandomUtil.modPos;
+import static theory.MathUtil.modPos;
 
 /**
  * The seven rotations of the diatonic scale

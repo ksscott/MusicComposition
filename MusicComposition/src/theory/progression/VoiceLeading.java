@@ -1,6 +1,6 @@
 package theory.progression;
 
-import static composing.RandomUtil.modPos;
+import static theory.MathUtil.modPos;
 import static composing.RandomUtil.roll;
 
 import java.util.ArrayList;
