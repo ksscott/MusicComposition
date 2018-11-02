@@ -2,7 +2,7 @@ package composing;
 
 import composing.strategy.ComposingStrategy;
 import composing.strategy.PrettyProgressionStrategy;
-import performance.Tempo;
+import performance.Tempo.Tempi;
 import theory.Measure;
 
 public class ComposerThread extends Thread {
@@ -48,7 +48,7 @@ public class ComposerThread extends Thread {
 	void requestTempoChange(boolean increase) {
 		// FIXME support all or else have a failure mode
 		if (strategy instanceof PrettyProgressionStrategy) {
-			Tempo newTempo = ((PrettyProgressionStrategy) strategy).requestTempoChange(increase);
+			Tempi newTempo = ((PrettyProgressionStrategy) strategy).requestTempoChange(increase);
 			// update measures already composed (consider changing)
 			for (Measure measure : composition.getFuture())
 				measure.setBpm(newTempo.getBpm());

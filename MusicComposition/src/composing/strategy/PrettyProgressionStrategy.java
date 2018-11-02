@@ -12,10 +12,13 @@ import java.util.stream.Collectors;
 
 import composing.IncompleteComposition;
 import composing.RandomUtil;
+import composing.outline.DynamicOutline;
+import composing.outline.RhythmicDensityOutline;
 import composing.writer.ChordPlayingUtil;
 import composing.writer.PrettyMelodyWriter;
+import performance.Dynamic;
 import performance.MidiNote;
-import performance.Tempo;
+import performance.Tempo.Tempi;
 import performance.instrument.Instrument;
 import theory.Chord;
 import theory.ChordSpec;
@@ -39,7 +42,7 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 	PrettyMelodyWriter melodyWriter;
 	
 	protected int octave = 3;
-	protected Tempo currentTempo;
+	protected Tempi currentTempo;
 	private Function<Chord,Phrase> chordPlayer; // hackish
 	
 	protected Instrument piano;
@@ -48,10 +51,14 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 	public PrettyProgressionStrategy(Key key) {
 		super(key);
 		this.melodyWriter = new PrettyMelodyWriter();
-		this.currentTempo = Tempo.ADAGIETTO;
-		this.chordPlayer = chord -> ChordPlayingUtil.playChordOnBeats(chord);
+		this.currentTempo = Tempi.ADAGIETTO;
+		RhythmicDensityOutline density = new RhythmicDensityOutline();
+		DynamicOutline dynamic = new DynamicOutline();
+		density.add(1-1/8.0, 0.0, 1.0);
+		dynamic.add(Dynamic.MEZZO_FORTE, 0.0, 1.0);
+		this.chordPlayer = chord -> ChordPlayingUtil.subdivide(chord, density, dynamic);
 		this.piano = Instrument.PIANO;
-		this.solo = Instrument.FLUTE;
+		this.solo = Instrument.STEEL_DRUMS;
 	}
 	
 	@Override
@@ -176,9 +183,9 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 	 * @param increase <code>true</code> to increase the tempo by 1, or false to decrease it by 1
 	 * @return the tempo after the change
 	 */
-	public Tempo requestTempoChange(boolean increase) {
+	public Tempi requestTempoChange(boolean increase) {
 		int newTempoOrdinal = currentTempo.ordinal() + (increase ? 1 : -1);
-		Tempo[] tempi = Tempo.values();
+		Tempi[] tempi = Tempi.values();
 		// bound:
 		newTempoOrdinal = Math.max(0, Math.min(tempi.length-1, newTempoOrdinal));
 		currentTempo = tempi[newTempoOrdinal];

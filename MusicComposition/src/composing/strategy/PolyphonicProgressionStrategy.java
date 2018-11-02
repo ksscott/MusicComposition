@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import composing.IncompleteComposition;
 import performance.MidiNote;
 import performance.Tempo;
+import performance.Tempo.Tempi;
 import performance.instrument.Instrument;
 import theory.Chord;
 import theory.ChordSpec;
@@ -28,7 +29,7 @@ public class PolyphonicProgressionStrategy extends ChordsSectionWriter {
 	
 	public PolyphonicProgressionStrategy(Key key) {
 		super(key);
-		this.tempo = Tempo.ANDANTE;
+		this.tempo = Tempi.ANDANTE;
 		this.voices = new ArrayList<>();
 		voices.add(Instrument.SOPRANO_VOICE);
 		voices.add(Instrument.ALTO_VOICE);

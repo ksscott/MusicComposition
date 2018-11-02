@@ -4,7 +4,7 @@ import java.util.Queue;
 
 import composing.IncompleteComposition;
 import performance.MidiNote;
-import performance.Tempo;
+import performance.Tempo.Tempi;
 import performance.instrument.Instrument;
 import theory.Measure;
 import theory.MidiPitch;
@@ -67,7 +67,7 @@ public class TwelveBarBluesStrategy implements ComposingStrategy {
 //			}
 //		}
 		
-		measure.setBpm(Tempo.ALLEGRETTO.getBpm());
+		measure.setBpm(Tempi.ALLEGRETTO.getBpm());
 		
 		return measure;
 	}
