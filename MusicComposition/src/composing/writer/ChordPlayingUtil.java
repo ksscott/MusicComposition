@@ -1,8 +1,12 @@
 package composing.writer;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import composing.outline.DynamicOutline;
+import composing.outline.RhythmicDensityOutline;
+import composing.outline.RhythmicOutline;
 import performance.Dynamic;
 import performance.MidiNote;
 import performance.instrument.Instrument;
@@ -202,6 +206,64 @@ public class ChordPlayingUtil {
 		for (MidiPitch pitch : rest)
 			phrase.add(new MidiNote(pitch, 1/8.0), 0); // add all on the beat
 		phrase.add(new MidiNote(bass, 1/8.0)); // add after the beat
+		
+		return phrase;
+	}
+	
+	public static Phrase subdivide(Chord chord, RhythmicDensityOutline density, DynamicOutline dynamic) {
+		if (chord.isEmpty())
+			throw new IllegalArgumentException("Cannot play a chord without pitches.");
+		List<MidiPitch> notes = chord.get();
+		
+		Phrase phrase = new Phrase();
+		RhythmicOutline rhythms = RhythmicOutline.simpleDensityReification(density, dynamic);
+		
+		List<Double> times = rhythms.getTimes();
+		if (times.isEmpty())
+			return phrase;
+		Collections.sort(times);
+		
+		Iterator<Double> timesIt = times.iterator();
+		Double thisTime = timesIt.next();
+		Double nextTime = null;
+		int index = 0;
+		while (true) {
+			if (timesIt.hasNext()) {
+				nextTime = timesIt.next();
+				Double duration = Math.max(1/8.0, nextTime - thisTime); // TODO change
+				MidiPitch pitch = notes.get(index++ % notes.size()); // TODO change
+				MidiNote note = new MidiNote(pitch, duration);
+				note.setDynamic(dynamic.get(thisTime));
+				phrase.add(note, thisTime);
+				
+				thisTime = nextTime;
+			} else {
+				Double duration = Math.max(1/8.0, 1.0 - thisTime); // TODO change
+				MidiPitch pitch = notes.get(index++ % notes.size()); // TODO change
+				MidiNote note = new MidiNote(pitch, duration);
+				note.setDynamic(dynamic.get(thisTime));
+				phrase.add(note, thisTime);
+				
+				break;
+			}
+		}
+		
+		return phrase;
+	}
+	
+	public static Phrase albertiSubdivide(Chord chord, RhythmicDensityOutline density, DynamicOutline dynamic) {
+		if (chord.isEmpty())
+			throw new IllegalArgumentException("Cannot play a chord without pitches.");
+		
+		Phrase phrase = new Phrase();
+		RhythmicOutline rhythms = RhythmicOutline.simpleDensityReification(density, dynamic);
+		
+		List<Double> times = rhythms.getTimes();
+		Collections.sort(times);
+		
+		
+		
+		// TODO
 		
 		return phrase;
 	}

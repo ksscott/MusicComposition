@@ -2,11 +2,11 @@ package composing.outline;
 
 public class RhythmicDensityOutline extends ContinuousOutline<Double> {
 
-	private Resolver resolver;
+	private Resolver<Double> resolver;
 	
 	public RhythmicDensityOutline() {
 		super();
-		resolver = new Resolver() {
+		resolver = new Resolver<Double>() {
 			@Override
 			public Double resolve(Double startValue, Double endValue, Double distance) {
 				return startValue + distance*(endValue-startValue);
@@ -15,7 +15,7 @@ public class RhythmicDensityOutline extends ContinuousOutline<Double> {
 	}
 	
 	@Override
-	protected ContinuousOutline<Double>.Resolver getResolver() {
+	protected ContinuousOutline.Resolver<Double> getResolver() {
 		return resolver;
 	}
 
