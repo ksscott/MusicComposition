@@ -44,6 +44,10 @@ public class Dynamic implements Cloneable {
 		return up(1);
 	}
 	
+	/**
+	 * @param levels the number of {@code Dynamic} levels to go up
+	 * @return the {@code Dynamic} that is the given number of {@code levels} above this one
+	 */
 	public Dynamic up(int levels) {
 		return new Dynamic(value + levels);
 	}
@@ -53,6 +57,10 @@ public class Dynamic implements Cloneable {
 		return down(1);
 	}
 	
+	/**
+	 * @param levels the number of {@code Dynamic} levels to go down
+	 * @return the {@code Dynamic} that is the given number of {@code levels} below this one
+	 */
 	public Dynamic down(int levels) {
 		return new Dynamic(value - levels);
 	}
