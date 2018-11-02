@@ -1,6 +1,8 @@
 package composing.outline;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public abstract class DiscreteOutline<T> implements Outline<T> {
@@ -17,6 +19,10 @@ public abstract class DiscreteOutline<T> implements Outline<T> {
 	 */
 	public T get(Double time) {
 		return map.get(time);
+	}
+	
+	public List<Double> getTimes() {
+		return new ArrayList<>(map.keySet());
 	}
 	
 	/**
