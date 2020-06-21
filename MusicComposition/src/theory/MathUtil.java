@@ -2,6 +2,8 @@ package theory;
 
 import java.util.function.UnaryOperator;
 
+import theory.analysis.characteristic.Dimension;
+
 public class MathUtil {
 
 	/**
@@ -23,5 +25,12 @@ public class MathUtil {
 
 	/** Intended to map values from domain [0,1] to values in range [0,1] */
 	public static interface Curve extends UnaryOperator<Double> {}
+	
+	public static interface ProbabilitySpace<T extends Dimension> {
+		
+		// domain is the Dimension, T
+		// possible outcomes: Set<Expression<T>>
+		
+	}
 
 }
