@@ -38,18 +38,24 @@ public class ChordProgressions {
 	// TODO "secondsAndSevenths" is a crude, temporary hack
 	private static KeyChordProgression majorProgression(Note tonic, boolean secondsAndSevenths) {
 		KeyChordProgression progression = new KeyChordProgression(new Key(tonic, Key.MAJOR));
+		
+		// dominant
 		ChordSpec five = progression.getKey().chordSpec(5);
 		five.setDegree(Degree.SEVENTH);
 		five.setDegreeQuality(Degree.SEVENTH, Quality.MINOR);
+		
 		progression.put(1,4,2);
 		progression.put(1,6);
 		progression.put(1,3);
+		
 //		progression.put(2,5,2);
 		progression.put(progression.getKey().chordSpec(2),five,2);
 		progression.put(2,4);
 		progression.put(2,7);
+		
 		progression.put(3,1);
 		progression.put(3,6);
+		
 //		progression.put(4,5,4);
 		if (secondsAndSevenths)
 			progression.put(progression.getKey().chordSpec(4),five,4);
@@ -58,6 +64,7 @@ public class ChordProgressions {
 			progression.put(4,3);
 		progression.put(4,2);
 //		progressions.put(4,1); // XXX debugging only
+		
 //		progression.put(5,1,3);
 		progression.put(five,progression.getKey().chordSpec(1),3);
 //		progression.put(5,6);
@@ -66,13 +73,61 @@ public class ChordProgressions {
 //		progression.put(5,4);
 		if (secondsAndSevenths)
 			progression.put(five,progression.getKey().chordSpec(4));
+		
 		progression.put(6,4,2);
 		progression.put(6,2,2);
 		progression.put(6,1);
+		
 //		progression.put(7,5);
 		progression.put(progression.getKey().chordSpec(7),five);
 		if (secondsAndSevenths)
 			progression.put(7,1);
+		
+		return progression;
+	}
+	
+	public static KeyChordProgression minorProgression(Note tonic) {
+		KeyChordProgression progression = new KeyChordProgression(new Key(tonic, Key.MINOR));
+		
+		// dominants
+		// five
+		ChordSpec five = progression.getKey().chordSpec(5);
+		five.setDegree(Degree.SEVENTH);
+		five.setDegreeQuality(Degree.SEVENTH, Quality.MINOR);
+		// dominant of relative major
+		ChordSpec fiveOfThree = progression.getKey().chordSpec(7);
+		fiveOfThree.setDegree(Degree.SEVENTH);
+		fiveOfThree.setDegreeQuality(Degree.SEVENTH, Quality.MINOR);
+		// dominant of four
+		ChordSpec fiveOfFour = progression.getKey().chordSpec(1);
+		fiveOfFour.setDegree(Degree.SEVENTH);
+		fiveOfFour.setDegreeQuality(Degree.SEVENTH, Quality.MINOR);
+		
+		progression.put(1, 3);
+		progression.put(1, 4);
+		progression.put(1, 5);
+		progression.put(progression.getKey().chordSpec(1), fiveOfFour);
+		
+		progression.put(fiveOfFour, progression.getKey().chordSpec(4));
+		
+		progression.put(progression.getKey().chordSpec(2),five,2);
+		
+		progression.put(3, 6, 2);
+		progression.put(3, 4, 2);
+		progression.put(progression.getKey().chordSpec(3), fiveOfFour);
+		
+		progression.put(4, 5);
+		progression.put(progression.getKey().chordSpec(4),five,2);
+		progression.put(progression.getKey().chordSpec(4),fiveOfThree);
+		
+		progression.put(5, 1, 3);
+		progression.put(five,progression.getKey().chordSpec(1),3);
+		progression.put(progression.getKey().chordSpec(5), fiveOfFour);
+		
+		progression.put(6, 4);
+		
+		progression.put(fiveOfThree, progression.getKey().chordSpec(3));
+		
 		return progression;
 	}
 	
