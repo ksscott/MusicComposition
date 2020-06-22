@@ -5,10 +5,10 @@ import java.util.List;
 
 public class Instrument implements Comparable<Instrument> {
 	
-	public static final Instrument SOPRANO_VOICE = new Instrument ("Soprano");
-	public static final Instrument ALTO_VOICE = new Instrument ("Alto");
-	public static final Instrument TENOR_VOICE = new Instrument ("Tenor");
-	public static final Instrument BASS_VOICE = new Instrument ("Bass");
+	public static final Instrument SOPRANO_VOICE = new Instrument("Soprano");
+	public static final Instrument ALTO_VOICE = new Instrument("Alto");
+	public static final Instrument TENOR_VOICE = new Instrument("Tenor");
+	public static final Instrument BASS_VOICE = new Instrument("Bass");
 	
 	public static final Instrument VIOLIN = new Instrument("Violin");
 	public static final Instrument VIOLA = new Instrument("Viola");
@@ -33,7 +33,7 @@ public class Instrument implements Comparable<Instrument> {
 	public static final Instrument CHURCH_ORGAN = new Instrument("Church Organ");
 	
 	public static final Instrument NYLON_GUITAR = new Instrument("Nylon Guitar");
-	public static final Instrument ACOUSTIC_BASS = new Instrument("Bass");
+	public static final Instrument ACOUSTIC_BASS = new Instrument("Acoustic Bass");
 	
 	public static final Instrument CELESTA = new Instrument("Celesta");
 	public static final Instrument XYLOPHONE = new Instrument("Xylophone");
@@ -49,9 +49,7 @@ public class Instrument implements Comparable<Instrument> {
 	
 	private static List<Instrument> knownInstruments;
 	
-	private String name;
-	
-	public Instrument(String name) {
+	{
 		knownInstruments = new ArrayList<>();
 		knownInstruments.add(SOPRANO_VOICE);
 		knownInstruments.add(ALTO_VOICE);
@@ -74,6 +72,11 @@ public class Instrument implements Comparable<Instrument> {
 		knownInstruments.add(BAGPIPE);
 		knownInstruments.add(STEEL_DRUMS);
 		knownInstruments.add(PIANO);
+	}
+	
+	private String name;
+	
+	public Instrument(String name) {
 		this.name = name;
 	}
 	
@@ -125,6 +128,5 @@ public class Instrument implements Comparable<Instrument> {
 			return false;
 		return true;
 	}
-
 
 }
