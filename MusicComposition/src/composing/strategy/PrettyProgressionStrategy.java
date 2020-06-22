@@ -20,6 +20,7 @@ import performance.Tempo;
 import performance.instrument.Instrument;
 import theory.Chord;
 import theory.ChordSpec;
+import theory.ChordSpec.Quality;
 import theory.Key;
 import theory.Measure;
 import theory.MidiPitch;
@@ -76,7 +77,7 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 		
 		List<Section> sections = analysis.getSections();
 		if (sections.isEmpty())
-			return ChordProgressions.standardMajorProgression(lastKey.getTonic());
+			return ChordProgressions.standardProgression(lastKey);
 		
 		Section lastSection = sections.get(sections.size()-1);
 		Set<Key> lastSectionKeys = lastSection.getAllKeys();
@@ -94,14 +95,14 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 //			System.out.println("COMPOSING SECTION - TBD");
 			lastKey = lastSectionKeys.iterator().next(); // any (only?) key in the last section
 			if (sections.size() == 1)
-				return ChordProgressions.standardMajorProgression(lastKey.getTonic());
+				return ChordProgressions.standardProgression(lastKey);
 			Section secondLastSection = sections.get(sections.size()-2);
 			if (secondLastSection.getKeys(secondLastSection.size()-1).size() >= 1) { // set back to == when done testing
 				// presume same as lastKey
 				// after two sections in this key, let's change keys
 //				System.out.println("ATTEMPTING TO CHANGE KEYS!!!");
 				if (lastKey.equals(key)) {
-					nextKey = roll(50) ? new Key(lastKey.note(4), Key.MAJOR) : new Key(lastKey.note(5), Key.MAJOR);
+					nextKey = roll(50) ? new Key(lastKey.note(4), lastKey.getScale()) : new Key(lastKey.note(5), lastKey.getScale());
 				} else {
 					// let's come back
 					nextKey = key;
@@ -110,17 +111,17 @@ public class PrettyProgressionStrategy extends ChordsSectionWriter {
 				// let's write a second section in the key lastKey
 			}
 			// hijack control flow:
-			nextKey = new Key(lastKey.note(4), Key.MAJOR); // circle of fifths!
+			nextKey = new Key(lastKey.note(4), lastKey.getScale()); // circle of fifths!
 //			nextKey = lastKey.parallelKey().relativeKey(); // up by minor third; this feels uncomfortable...
 //			System.out.println("Last key: " + lastKey + " ... New key: " + nextKey);
 		}
 		
 		KeyChordProgression lastKeyProgression = 
-				ChordProgressions.standardMajorProgression(lastKey.getTonic());
+				ChordProgressions.standardProgression(lastKey);
 		if (nextKey != null) {
 			// change keys from lastKey to nextKey
 			return new KeyChange(lastKeyProgression, 
-					ChordProgressions.standardMajorProgression(nextKey.getTonic()));
+					ChordProgressions.standardProgression(nextKey));
 		} else {
 			return lastKeyProgression;
 		}

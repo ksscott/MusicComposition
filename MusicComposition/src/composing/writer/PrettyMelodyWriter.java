@@ -33,7 +33,7 @@ public class PrettyMelodyWriter implements MelodyWriter {
 				.map(MidiNote::getPitch)
 				.map(MidiPitch::new)
 				.collect(Collectors.toSet());
-		Key key = Key.inferKey(allPitchesInAllMeasures);
+		Key key = Key.inferKey(allPitchesInAllMeasures); // FIXME this assumes Ionian mode
 		
 		return writeMelody(measures, key);
 	}

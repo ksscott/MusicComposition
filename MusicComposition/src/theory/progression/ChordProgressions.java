@@ -27,6 +27,14 @@ public class ChordProgressions {
 	// util class
 	private ChordProgressions() {}
 	
+	public static KeyChordProgression standardProgression(Key key) {
+		if (key.getScale().equals(Key.MINOR)) {
+			return minorProgression(key.getTonic());
+		}
+		// just assume a major progression? not a good solution for all Keys in general // TODO
+		return standardMajorProgression(key.getTonic());
+	}
+	
 	public static KeyChordProgression standardMajorProgression(Note tonic) {
 		return majorProgression(tonic, true);
 	}

@@ -29,6 +29,7 @@ public class Composer {
 	private List<ComposingStrategy> oldTricks = Arrays.asList(new ComposingStrategy[] { 
 					new TwelveBarImprovStrategy(new Note(Letter.C)),
 					new PrettyProgressionStrategy(new Key(new Note(Letter.C, Accidental.NONE), Key.MAJOR)),
+					new PrettyProgressionStrategy(new Key(new Note(Letter.C, Accidental.NONE), Key.MINOR)),
 					new PolyphonicProgressionStrategy(new Key(new Note(Letter.C, Accidental.NONE), Key.MAJOR)),
 			});
 	
@@ -38,7 +39,7 @@ public class Composer {
 	 */
 	public Measure beginComposing() {
 //		return beginComposing(randomRepertoire());
-		return beginComposing(oldTricks.get(1));
+		return beginComposing(oldTricks.get(2));
 	}
 	
 	/**
