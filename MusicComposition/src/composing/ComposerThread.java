@@ -53,6 +53,8 @@ public class ComposerThread extends Thread {
 			for (Measure measure : composition.getFuture())
 				measure.setBpm(newTempo.getBpm());
 			System.out.println((increase ? "Increased" : "Decreased") + " tempo to " + newTempo.name());
+		} else {
+			System.out.println("Current composition strategy does not support tempo changes");
 		}
 	}
 }

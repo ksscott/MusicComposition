@@ -132,6 +132,9 @@ public abstract class ContinuousOutline<T> implements Outline<T> {
 		 * @param curve
 		 */
 		public OutlineRegion(T startValue, Double startTime, T endValue, Double endTime, Curve curve) {
+			if (startTime > endTime)
+				throw new IllegalArgumentException("Start time cannot be after end time");
+			
 			this.startTime = startTime;
 			this.endTime = endTime;
 			this.startValue = startValue;
@@ -144,11 +147,11 @@ public abstract class ContinuousOutline<T> implements Outline<T> {
 		}
 		
 		public boolean affectsRange(Double start, Double end) {
-			return !(startTime > end && endTime < start);
+			return !(startTime > end || endTime < start);
 		}
 		
 		public T getValue(Double time, Resolver<T> resolver) {
-			if (time < startTime || time > endTime)
+			if (!this.contains(time))
 				throw new IllegalArgumentException("Time " + time + " does not fall in range (" + startTime + "," + endTime + ").");
 			
 			double normalizedTime = (time - startTime) / (endTime - startTime);

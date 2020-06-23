@@ -11,8 +11,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import composing.outline.TempoOutline;
 import performance.MidiAction;
 import performance.MidiNote;
+import performance.Tempo;
+import performance.Tempo.TempoImpl;
 import performance.instrument.Instrument;
 import theory.analysis.Phrase;
 
@@ -23,7 +26,7 @@ public class Measure implements Comparable<Measure> {
 	private double beatValue;
 	
 	int measureNumber;
-	private double bpm = 60;
+	private TempoOutline tempo = new TempoOutline();
 	
 	private String metaInfo = "";
 	
@@ -36,6 +39,7 @@ public class Measure implements Comparable<Measure> {
 			throw new IllegalArgumentException("Measure beats must have a positive duration.");
 		this.beats = beats;
 		this.beatValue = beatValue;
+		this.tempo.add(new TempoImpl(60), 0.0, beats*beatValue);
 		this.instruments = new HashSet<>();
 	}
 	
@@ -49,8 +53,13 @@ public class Measure implements Comparable<Measure> {
 	public int getMeasureNumber() { return measureNumber; }
 	public void setMeasureNumber(int number) { this.measureNumber = number; }
 
-	public double getBpm() { return bpm; }
-	public void setBpm(double beatsPerMinute) { this.bpm = beatsPerMinute; }
+	public int getBpm() { return tempo.get(0.0).getBpm(); }
+	public int getBpm(Double time) { return tempo.get(time).getBpm(); }
+	public void setBpm(int beatsPerMinute) { this.tempo.add(new TempoImpl(beatsPerMinute), 0.0, length()); }
+	public void slideTempoTo(Tempo newTempo) {
+		Tempo startTempo = tempo.get(0.0);
+		tempo.add(startTempo, 0.0, newTempo, length());
+	}
 
 	public String getMetaInfo() { return new String(metaInfo); }
 	public void setMetaInfo(String info) { this.metaInfo = info; }

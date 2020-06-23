@@ -102,6 +102,7 @@ public class JavaSoundInterfacer {
 				if (ticker < time)
 					waitWholeNotes(time - ticker, beatValue, bpm);
 				ticker = time;
+				bpm = measure.getBpm(ticker); // TODO this adjusts note start times, but doesn't tell the instruments to shorten note duration
 				
 				for (performance.instrument.Instrument instrument : measure.getInstruments()) {
 					Instrument midiInstrument = instrumentBank.translate(instrument);
